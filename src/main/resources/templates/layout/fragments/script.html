@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<th:block th:fragment="script">
+	
+	<!-- Core plugin JavaScript-->
+	<script src="/bootstrap/vendor/jquery-easing/jquery.easing.min.js"></script>
+	
+	<!-- Custom scripts for all pages-->
+	<script src="/bootstrap/js/sb-admin-2.min.js"></script>
+	
+	<!-- Page level plugins -->
+	<script src="/bootstrap/vendor/datatables/jquery.dataTables.min.js"></script>
+	<script src="/bootstrap/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+	
+	<!-- Page level custom scripts -->
+	<script src="/bootstrap/js/demo/datatables-demo.js"></script>
+	
+	<script>
+		// 도메인 가져와서 일치하는 사이드 메뉴 addclass('active')
+		$(document).ready(function() {
+			activeMenu();
+		})
+		
+		function activeMenu() {
+			var currentPath = window.location.pathname;
+			$(".nav-link[href='"+currentPath+"']").parent().addClass("active");
+		}
+		
+		function logout() {
+			deleteCookie("X-AUTH-TOKEN");
+			location.reload();
+		}
+		
+		function deleteCookie(name) {
+		    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+		}
+	</script>
+</th:block>
+</html>

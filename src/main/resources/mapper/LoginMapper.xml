@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mio.admin.mapper.LoginMapper">
+
+	<select id="selectOne" parameterType="map" resultType="map">
+		select idx, id, name, email 
+		from GW_USER_INFO
+		LIMIT 1
+	</select>
+	
+	<select id="selectUserInfo" parameterType="string" resultType="com.mio.admin.dto.MemberDto">
+		select idx, id, name, email
+		from GW_USER_INFO
+		where 1=1
+			and email = #{id}
+		LIMIT 1
+	</select>
+
+	<select id="login" parameterType="string" resultType="int">
+		select COUNT(1)
+		from GW_USER_INFO
+		where 1=1
+			and email = #{id}
+			and	pwd = password(#{pwd})
+	</select>
+	
+</mapper>

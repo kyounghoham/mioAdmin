@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+	  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	  layout:decorate="~{layout/main-layout}">
+<th:block layout:fragment="content">
+<script>
+$(document).ready(function() {
+})
+
+// 영역 스위칭
+function toggleArea(obj) {
+	var $icon = $(".fas." + obj);
+	
+	if ($icon.hasClass("fa-arrow-up")) {
+        $icon.removeClass("fa-arrow-up").addClass("fa-arrow-down");
+    } else {
+        $icon.removeClass("fa-arrow-down").addClass("fa-arrow-up");
+    }
+    
+	$("#"+obj).slideToggle();
+}
+
+// 개별 순위 조회
+function searchRank() {
+	startProgess();
+}
+
+// 진행상항 노출
+async function startProgess() {
+	initProgress();
+	$("#progressModal").modal({'backdrop':'static'});
+	
+	// 진행률 조절
+	for(var i=0; i<=100; i++) {
+		$("#progress-bar").text(i+'%');
+		$("#progress-bar").css("width", i + '%');
+		await sleep(50);
+	}
+	
+	$("#progressClose").toggleClass('hide');
+}
+
+// 프로그래스 초기화
+function initProgress() {
+	$("#progressClose").addClass('hide');
+	$("#progress-bar").text('');
+	$("#progress-bar").css("width", '0%');
+}
+
+// 결과창 노출
+function showResult() {
+	// 검색창 숨김
+	if($(".fas.search").hasClass("fa-arrow-up")) {
+		toggleArea("search");
+	}
+	// 결과창 오픈
+	if($(".fas.result").hasClass("fa-arrow-down")) {
+		toggleArea("result");
+	}
+}
+
+// sleep 구현
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+</script>
+<div class="container-fluid">
+	<!-- Page Heading -->
+	<div class="d-sm-flex align-items-center justify-content-between mb-4">
+		<h1 class="h3 mb-0 text-gray-800">개별조회</h1>
+	</div>
+
+	<!-- 검색 영역 -->
+	<div class="row">
+		<div class="col-12">
+			<div class="card shadow mb-4">
+				<div class="card-header py-3" onclick="toggleArea('search');">
+					<h6 class="m-0 font-weight-bold text-primary">
+						<span class="icon text-gray-600">
+                            <i class="search fas fa-arrow-up"></i>
+                        </span>&nbsp;
+						검색
+					</h6>
+				</div>
+				<div class="card-body" id="search">
+					<div class="row mb-4">
+						<div class="col-1"></div>
+						<div class="col-5">
+							<label><span class="asterisk">*</span>검색 키워드</label>
+							<textarea class="form-control" rows="20"></textarea>
+						</div>
+						<div class="col-5">
+							<label><span class="asterisk">*</span>블로그 주소</label>
+							<textarea class="form-control" rows="20"></textarea>
+						</div>
+						<div class="col-1"></div>
+					</div>
+					<div style="text-align: center;">
+						<a href="#" class="btn btn-primary btn-icon-split" onclick="searchRank();">
+		                    <span class="text">개별 순위 조회</span>
+		                </a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 컨텐츠 영역 -->
+	<div class="row">
+		<div class="col-12">
+			<div class="card shadow mb-4">
+				<div class="card-header py-3" onclick="toggleArea('result');">
+					<h6 class="m-0 font-weight-bold text-primary">
+						<span class="icon text-gray-600">
+                            <i class="result fas fa-arrow-down"></i>
+                        </span>&nbsp;
+                        결과
+                    </h6>
+				</div>
+				<div class="card-body hide" id="result">
+					<div class="table-responsive">
+						<table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+							<thead>
+								<tr>
+									<th>키워드</th>
+									<th>블로그명</th>
+									<th>블로그주소</th>
+									<th>PC순위</th>
+									<th>MO순위</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>수원산부인과</td>
+									<td>행복한 로앤입니다.</td>
+									<td>https://blog.naver.com/ijw0111</td>
+									<td>1</td>
+									<td>1</td>
+								</tr>
+								<tr>
+									<td>수원산부인과</td>
+									<td>로앤은 사랑입니다.</td>
+									<td>https://blog.naver.com/tarjanil</td>
+									<td>3</td>
+									<td>3</td>
+								</tr>
+								<tr>
+									<td>수원산부인과</td>
+									<td>즐거운 로앤입니다.</td>
+									<td>https://blog.naver.com/cabbianopiu</td>
+									<td>5</td>
+									<td>5</td>
+								</tr>
+								<tr>
+									<td>수원산부인과</td>
+									<td>편안한 로앤입니다.</td>
+									<td>https://blog.naver.com/kagurazuki</td>
+									<td>15</td>
+									<td>15</td>
+								</tr>
+								<tr>
+									<td>수원 임신중절수술</td>
+									<td>로앤은 사랑입니다.</td>
+									<td>https://blog.naver.com/tarjanil</td>
+									<td>1</td>
+									<td>1</td>
+								</tr>
+								<tr>
+									<td>수원 임신중절수술</td>
+									<td>◀▶로앤은사랑◀▶</td>
+									<td>https://blog.naver.com/kangsn7312</td>
+									<td>5</td>
+									<td>5</td>
+								</tr>
+								<tr>
+									<td>수원 임신중절수술</td>
+									<td>♡로앤산부인과♡</td>
+									<td>https://blog.naver.com/lttyrugv</td>
+									<td>8</td>
+									<td>8</td>
+								</tr>
+								<tr>
+									<td>수원산부인과</td>
+									<td>행복한 로앤입니다.</td>
+									<td>https://blog.naver.com/ijw0111</td>
+									<td>1</td>
+									<td>1</td>
+								</tr>
+								<tr>
+									<td>수원산부인과</td>
+									<td>로앤은 사랑입니다.</td>
+									<td>https://blog.naver.com/tarjanil</td>
+									<td>3</td>
+									<td>3</td>
+								</tr>
+								<tr>
+									<td>수원산부인과</td>
+									<td>즐거운 로앤입니다.</td>
+									<td>https://blog.naver.com/cabbianopiu</td>
+									<td>5</td>
+									<td>5</td>
+								</tr>
+								<tr>
+									<td>수원산부인과</td>
+									<td>편안한 로앤입니다.</td>
+									<td>https://blog.naver.com/kagurazuki</td>
+									<td>15</td>
+									<td>15</td>
+								</tr>
+								<tr>
+									<td>수원 임신중절수술</td>
+									<td>로앤은 사랑입니다.</td>
+									<td>https://blog.naver.com/tarjanil</td>
+									<td>1</td>
+									<td>1</td>
+								</tr>
+								<tr>
+									<td>수원 임신중절수술</td>
+									<td>◀▶로앤은사랑◀▶</td>
+									<td>https://blog.naver.com/kangsn7312</td>
+									<td>5</td>
+									<td>5</td>
+								</tr>
+								<tr>
+									<td>수원 임신중절수술</td>
+									<td>♡로앤산부인과♡</td>
+									<td>https://blog.naver.com/lttyrugv</td>
+									<td>8</td>
+									<td>8</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Progress Modal-->
+<div class="modal fade" id="progressModal" tabindex="-1" role="dialog" aria-labelledby="progressModalLabel" aria-hidden="true" style="top: 200px;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">데이터를 수집중입니다.</h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress mt-4 mb-4">
+                    <div id="progress-bar" class="progress-bar" style="transition: width 0.5s;"></div>
+                </div>
+			</div>
+            <div class="modal-footer">
+                <button id="progressClose" class="btn btn-secondary hide" type="button" data-dismiss="modal" onclick="showResult();">확인</button>
+            </div>
+        </div>
+    </div>
+</div>
+</th:block>
+
+</html>

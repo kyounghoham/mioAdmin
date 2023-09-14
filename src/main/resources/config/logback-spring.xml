@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true">
+
+	<!-- 변수 지정 -->
+	<property name="LOG_DIR" value="/mio/admin/logs" />
+	<property name="LOG_PATH_NAME" value="${LOG_DIR}/error.log" />
+	
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<!-- <layout class="ch.qos.logback.classic.PatternLayout"> -->
+			<Pattern>[%d{yyyy-MM-dd HH:mm:ss}] %-5p: %c - %m%n</Pattern>
+			<!-- </layout> -->
+		</encoder>
+	</appender>
+	
+	<!-- FILE Appender -->
+	<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>error</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+		<file>${LOG_PATH_NAME}</file>
+		<!-- 일자별로 로그파일 적용하기 -->
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_PATH_NAME}.%d{yyyyMMdd}</fileNamePattern>
+			<maxHistory>30</maxHistory> <!-- 일자별 백업파일의 보관기간 -->
+			<!--  <maxFileSize>5MB</maxFileSize> -->
+		</rollingPolicy>
+		<encoder>
+			<pattern>[%-5p] [%d{yyyy-MM-dd HH:mm:ss}] [%F]%M\(%L\) : %m%n</pattern>
+		</encoder>
+	</appender>
+	
+	<!-- Loggers -->
+	<logger name="org.springframework.core">
+		<level value="error" />
+	</logger>
+	<logger name="org.springframework.beans">
+		<level value="error" />
+	</logger>
+	<logger name="org.springframework.context">
+		<level value="error" />
+	</logger>
+	<logger name="org.springframework.web">
+		<level value="error" />
+	</logger>
+	<logger name="ch.qos">
+		<level value="error" />
+	</logger>
+	<logger name="java.sql">
+		<level value="error" />
+	</logger>
+	<logger name="jdbc">
+		<level value="error" />
+	</logger>
+	<logger name="jdbc.sqlonly">
+		<level value="info" />
+	</logger>
+	<logger name="jdbc.resultsettable">
+		<level value="info" />
+	</logger>
+	<logger name="org.mybatis.spring">
+		<level value="error" />
+	</logger>
+
+	<!-- FILE 로 명시된 ID를 출력 부분에 추가 한다. -->
+	<root level="info">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="FILE" /> <!-- 추가 -->
+	</root>
+</configuration>
