@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
@@ -12,9 +13,6 @@
 	<!-- Page level plugins -->
 	<script src="/bootstrap/vendor/datatables/jquery.dataTables.min.js"></script>
 	<script src="/bootstrap/vendor/datatables/dataTables.bootstrap4.min.js"></script>
-	
-	<!-- Page level custom scripts -->
-	<script src="/bootstrap/js/demo/datatables-demo.js"></script>
 	
 	<script>
 		// 도메인 가져와서 일치하는 사이드 메뉴 addclass('active')
@@ -34,6 +32,46 @@
 		
 		function deleteCookie(name) {
 		    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+		}
+		
+		function formatDate(date) {
+		    const year = date.getFullYear();
+		    const month = String(date.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 1을 더하고 2자리로 포맷
+		    const day = String(date.getDate()).padStart(2, '0'); // 일을 2자리로 포맷
+		    return `${year}-${month}-${day}`;
+		}
+		
+		function tableToJson(tableId) { 
+		    var transactions = [];
+		    var table = $('#'+tableId).DataTable(); 
+		    var data = table.rows().data(); 
+		    for (var i = 0; i < data.length; i++) { 
+		    	for (var j = 0; j < data[i].length; j++) {
+		    		// 
+		    	}
+		    	transactions.push(data[i]); 
+		    }
+		    return transactions;
+		}
+		
+		function tableHeaderToJson(tableId) { 
+		    var headers = [];
+		    var arrOfArr = [];
+		    $("thead").find("th").each(function () {
+		    	headers.push($(this).text().trim());
+		    });
+		    
+		    $("#"+tableId).find("tr").each(function () {
+		    	
+		    	$("#"+tableId).find("td").each(function (i) {
+		    		var td = $(this);
+		    		var tdVal = '';
+		        	tdVal = td.eq(i).html();
+		    	});
+		    });
+		    
+		    arrOfArr[0]=headers;
+		    return arrOfArr;
 		}
 	</script>
 </th:block>

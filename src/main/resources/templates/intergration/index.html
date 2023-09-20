@@ -1,16 +1,405 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/main-layout}">
-	 
+<html xmlns:th="http://www.thymeleaf.org" 
+	  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	  layout:decorate="~{layout/main-layout}">
 <th:block layout:fragment="content">
-	<div class="container-fluid">
-		<!-- Page Heading -->
-		<div class="d-sm-flex align-items-center justify-content-between mb-4">
-			<h1 class="h3 mb-0 text-gray-800">통합 조회</h1>
-		</div>
-		
-		통합 조회
+<style>
+.nav-tabs .nav-link {
+	background-color: white;
+	margin-bottom: 0px !important;
+}
+textarea {
+	font-size: 14px !important;
+}
+</style>
+<script>
+var xhr = $.ajaxSettings.xhr();
+xhr.previous_text = "";
+
+$(document).ready(function() {
+})
+
+// 영역 스위칭
+function toggleArea(obj) {
+	var $icon = $(".fas." + obj);
+	
+	if ($icon.hasClass("fa-arrow-up")) {
+        $icon.removeClass("fa-arrow-up").addClass("fa-arrow-down");
+    } else {
+        $icon.removeClass("fa-arrow-down").addClass("fa-arrow-up");
+    }
+    
+	$("#"+obj).slideToggle();
+}
+
+// 개별 순위 조회
+function searchRank() {
+	var keywordList = $("#keywordList").val().trim();
+	var blogList1 = $("#blogList1").val().trim();
+	var blogList2 = $("#blogList2").val().trim();
+	var blogList3 = $("#blogList3").val().trim();
+	var blogList4 = $("#blogList4").val().trim();
+	var blogList5 = $("#blogList5").val().trim();
+	
+	if(keywordList == "") {
+		alert("검색 키워드를 입력해주세요");
+		return false;
+	}
+	if(blogList1 == "") {
+		alert("블로그 주소를 입력해주세요");
+		return false;
+	}
+	
+	initProgress();
+	
+	$("#progressModal").modal({'backdrop':'static'});
+	
+	startProgress();
+}
+
+// 진행상항 노출
+function startProgress() {
+    var keywordList = $("#keywordList").val().trim();
+	var blogList1 = $("#blogList1").val().trim();
+	var blogList2 = $("#blogList2").val().trim();
+	var blogList3 = $("#blogList3").val().trim();
+	var blogList4 = $("#blogList4").val().trim();
+	var blogList5 = $("#blogList5").val().trim();
+	
+	$.ajax({
+        type: 'GET',
+        url: '/intergration/startCrawling',
+        contentType: 'text/plain;charset=UTF-8', // 서버에서 스트리밍되는 데이터의 형식
+        data : {
+			"keywordList" : keywordList,
+			"blogList1": blogList1,
+			"blogList2": blogList2,
+			"blogList3": blogList3,
+			"blogList4": blogList4,
+			"blogList5": blogList5
+		},
+		dataType : "json",
+		async: true,
+        xhrFields: {
+            onprogress: function (e) {
+                var result = e.currentTarget.responseText.substring(xhr.previous_text.length);
+                console.log(result);
+                // Update the progress bar
+                if (result !== "") {
+					if(result.indexOf("data") > -1) {
+						// 주어진 JSON 문자열
+						var jsonString = result;
+						var number = Number(jsonString.substring(4, 5)) + 1;
+						// "data:"를 삭제하여 JSON 문자열 추출
+						var jsonData = jsonString.substring(jsonString.indexOf('['));
+						// JSON 문자열을 JSON 객체로 파싱
+						var list = JSON.parse(jsonData);
+						var html = "";
+						for(item of list) {
+							html += "<tr>";
+							html += "	<td>" + item.keyword + "</td>";
+							html += "	<td>" + item.name + "</td>";
+							html += "	<td><a href='" + item.blog + "' target='_blank'>" + item.blog + "</td>";
+							html += "	<td><a href='" + item.href + "' target='_blank'>" + item.title + "</td>";
+							html += "	<td>" + item.rank + "</td>";
+							html += "	<td>" + (item.rank > 15 ? '-' : item.rank) + "</td>";
+							html += "</tr>";
+						}
+						$("#tableBody" + number).html(html);
+						
+						$('#dataTable' + number).DataTable();
+						
+						if($("#progress-bar").text() == '100%') {
+							$("#progressClose").removeClass('hide');
+						}
+					} else {
+						$("#progress-bar").text(Number(result) + "%");
+	                    $("#progress-bar").css("width", Number(result) + "%");
+					}
+                }
+                xhr.previous_text = e.currentTarget.responseText;
+            }
+        },
+    });
+}
+
+// 프로그래스 초기화
+function initProgress() {
+	$("#progressClose").addClass('hide');
+	$("#progress-bar").text('');
+	$("#progress-bar").css("width", '0%');
+	$(".tableBody").html('');
+}
+
+// 결과창 노출
+function showResult() {
+	// 검색창 숨김
+	if($(".fas.search").hasClass("fa-arrow-up")) {
+		toggleArea("search");
+	}
+	// 결과창 오픈
+	if($(".fas.result").hasClass("fa-arrow-down")) {
+		toggleArea("result");
+	}
+}
+</script>
+<div class="container-fluid">
+	<!-- Page Heading -->
+	<div class="d-sm-flex align-items-center justify-content-between mb-4">
+		<h1 class="h3 mb-0 text-gray-800">통합조회</h1>
 	</div>
+
+	<!-- 검색 영역 -->
+	<div class="row">
+		<div class="col-12">
+			<div class="card shadow mb-4">
+				<div class="card-header py-3" onclick="toggleArea('search');">
+					<h6 class="m-0 font-weight-bold text-primary">
+						<span class="icon text-gray-600">
+                            <i class="search fas fa-arrow-up"></i>
+                        </span>&nbsp;
+						검색
+					</h6>
+				</div>
+				<div class="card-body" id="search">
+					<div class="row mb-4">
+						<div class="col-2">
+							<label><span class="asterisk">*</span>검색 키워드</label>
+<textarea class="form-control" id="keywordList" name="keywordList" rows="20" placeholder="수원산부인과
+대구 임신중절수술
+강남산부인과
+부천산부인과"></textarea>
+						</div>
+						<div class="col-2">
+							<label><span class="asterisk">*</span>블로그 주소1</label>
+							<textarea class="form-control" id="blogList1" name="blogList1" rows="20" placeholder="https://blog.naver.com/ijw0111 
+https://blog.naver.com/tarjanil
+https://blog.naver.com/cabbianopiu"></textarea>
+						</div>
+						<div class="col-2">
+							<label><span class="asterisk">*</span>블로그 주소2</label>
+							<textarea class="form-control" id="blogList2" name="blogList2" rows="20"></textarea>
+						</div>
+						<div class="col-2">
+							<label><span class="asterisk">*</span>블로그 주소3</label>
+							<textarea class="form-control" id="blogList3" name="blogList3" rows="20"></textarea>
+						</div>
+						<div class="col-2">
+							<label><span class="asterisk">*</span>블로그 주소4</label>
+							<textarea class="form-control" id="blogList4" name="blogList4" rows="20"></textarea>
+						</div>
+						<div class="col-2">
+							<label><span class="asterisk">*</span>블로그 주소5</label>
+							<textarea class="form-control" id="blogList5" name="blogList5" rows="20"></textarea>
+						</div>
+					</div>
+					<div style="text-align: center;">
+						<a href="#" class="btn btn-primary btn-icon-split" onclick="searchRank();">
+		                    <span class="text">통합조회</span>
+		                </a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 컨텐츠 영역 -->
+	<div class="row">
+		<div class="col-12">
+			<div class="card shadow mb-4">
+				<div class="card-header py-3">
+					<div class="row">
+						<div class="col-12" onclick="toggleArea('result');">
+							<h6 class="m-0 font-weight-bold text-primary">
+								<span class="icon text-gray-600">
+		                            <i class="result fas fa-arrow-down"></i>
+		                        </span>&nbsp;
+		                        결과
+		                    </h6>
+						</div>
+					</div>
+				</div>
+				<div class="card-body hide" id="result">
+					<nav class="mb-4">
+					  <div class="nav nav-tabs" id="nav-tab" role="tablist">
+					    <button class="nav-link active mr-1" id="nav-blog1-tab" data-toggle="tab" data-target="#nav-blog1" type="button">blog1</button>
+					    <button class="nav-link mr-1" id="nav-blog2-tab" data-toggle="tab" data-target="#nav-blog2" type="button">blog2</button>
+					    <button class="nav-link mr-1" id="nav-blog3-tab" data-toggle="tab" data-target="#nav-blog3" type="button">blog3</button>
+					    <button class="nav-link mr-1" id="nav-blog4-tab" data-toggle="tab" data-target="#nav-blog4" type="button">blog4</button>
+					    <button class="nav-link mr-1" id="nav-blog5-tab" data-toggle="tab" data-target="#nav-blog5" type="button">blog5</button>
+					  </div>
+					</nav>
+					<div class="tab-content" id="myTabContent">
+					  <div class="tab-pane fade show active" id="nav-blog1">
+						<div class="table-responsive">
+							<table class="table table-bordered" id="dataTable1" width="100%" cellspacing="0">
+								<colgroup>
+									<col width="15%" />
+									<col width="15%" />
+									<col width="23%" />
+									<col width="33%" />
+									<col width="7%" />
+									<col width="7%" />
+								</colgroup>
+								<thead>
+									<tr>
+										<th>키워드</th>
+										<th>블로그명</th>
+										<th>블로그주소</th>
+										<th>제목</th>
+										<th>PC순위</th>
+										<th>MO순위</th>
+									</tr>
+								</thead>
+								<tbody id="tableBody1" class="tableBody">
+									<tr>
+										<td colspan="100" style="text-align: center;">검색 결과가 없습니다.</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					  </div>
+					  <div class="tab-pane fade" id="nav-blog2">
+						  <div class="table-responsive">
+							<table class="table table-bordered" id="dataTable2" width="100%" cellspacing="0">
+								<colgroup>
+									<col width="15%" />
+									<col width="15%" />
+									<col width="23%" />
+									<col width="33%" />
+									<col width="7%" />
+									<col width="7%" />
+								</colgroup>
+								<thead>
+									<tr>
+										<th>키워드</th>
+										<th>블로그명</th>
+										<th>블로그주소</th>
+										<th>제목</th>
+										<th>PC순위</th>
+										<th>MO순위</th>
+									</tr>
+								</thead>
+								<tbody id="tableBody2" class="tableBody">
+									<tr>
+										<td colspan="100" style="text-align: center;">검색 결과가 없습니다.</td>
+									</tr>
+								</tbody>
+							</table>
+						  </div>
+					  </div>
+					  <div class="tab-pane fade" id="nav-blog3">
+						  <div class="table-responsive">
+							<table class="table table-bordered" id="dataTable3" width="100%" cellspacing="0">
+								<colgroup>
+									<col width="15%" />
+									<col width="15%" />
+									<col width="23%" />
+									<col width="33%" />
+									<col width="7%" />
+									<col width="7%" />
+								</colgroup>
+								<thead>
+									<tr>
+										<th>키워드</th>
+										<th>블로그명</th>
+										<th>블로그주소</th>
+										<th>제목</th>
+										<th>PC순위</th>
+										<th>MO순위</th>
+									</tr>
+								</thead>
+								<tbody id="tableBody3" class="tableBody">
+									<tr>
+										<td colspan="100" style="text-align: center;">검색 결과가 없습니다.</td>
+									</tr>
+								</tbody>
+							</table>
+						  </div>
+					  </div>
+					  <div class="tab-pane fade" id="nav-blog4">
+						  <div class="table-responsive">
+							<table class="table table-bordered" id="dataTable4" width="100%" cellspacing="0">
+								<colgroup>
+									<col width="15%" />
+									<col width="15%" />
+									<col width="23%" />
+									<col width="33%" />
+									<col width="7%" />
+									<col width="7%" />
+								</colgroup>
+								<thead>
+									<tr>
+										<th>키워드</th>
+										<th>블로그명</th>
+										<th>블로그주소</th>
+										<th>제목</th>
+										<th>PC순위</th>
+										<th>MO순위</th>
+									</tr>
+								</thead>
+								<tbody id="tableBody4" class="tableBody">
+									<tr>
+										<td colspan="100" style="text-align: center;">검색 결과가 없습니다.</td>
+									</tr>
+								</tbody>
+							</table>
+						  </div>
+					  </div>
+					  <div class="tab-pane fade" id="nav-blog5">
+						  <div class="table-responsive">
+							<table class="table table-bordered" id="dataTable5" width="100%" cellspacing="0">
+								<colgroup>
+									<col width="15%" />
+									<col width="15%" />
+									<col width="23%" />
+									<col width="33%" />
+									<col width="7%" />
+									<col width="7%" />
+								</colgroup>
+								<thead>
+									<tr>
+										<th>키워드</th>
+										<th>블로그명</th>
+										<th>블로그주소</th>
+										<th>제목</th>
+										<th>PC순위</th>
+										<th>MO순위</th>
+									</tr>
+								</thead>
+								<tbody id="tableBody5" class="tableBody">
+									<tr>
+										<td colspan="100" style="text-align: center;">검색 결과가 없습니다.</td>
+									</tr>
+								</tbody>
+							</table>
+						  </div>
+					  </div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Progress Modal-->
+<div class="modal fade" id="progressModal" tabindex="-1" role="dialog" aria-labelledby="progressModalLabel" aria-hidden="true" style="top: 200px;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">데이터를 수집중입니다.</h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress mt-4 mb-4">
+                    <div id="progress-bar" class="progress-bar" style="transition: width 0.5s;"></div>
+                </div>
+			</div>
+            <div class="modal-footer">
+                <button id="progressClose" class="btn btn-secondary hide" type="button" data-dismiss="modal" onclick="showResult();">확인</button>
+            </div>
+        </div>
+    </div>
+</div>
 </th:block>
+
 </html>
