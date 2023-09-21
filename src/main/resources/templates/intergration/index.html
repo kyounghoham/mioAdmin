@@ -91,7 +91,7 @@ function startProgress() {
 					if(result.indexOf("data") > -1) {
 						// 주어진 JSON 문자열
 						var jsonString = result;
-						var number = Number(jsonString.substring(4, 5)) + 1;
+						var number = Number(jsonString.substring(4, 5));
 						// "data:"를 삭제하여 JSON 문자열 추출
 						var jsonData = jsonString.substring(jsonString.indexOf('['));
 						// JSON 문자열을 JSON 객체로 파싱
@@ -103,6 +103,7 @@ function startProgress() {
 							} else {
 								html += "<tr>";
 							}
+							html += "	<td>" + item.number + "</td>";
 							html += "	<td>" + item.keyword + "</td>";
 							html += "	<td>" + item.name + "</td>";
 							html += "	<td><a href='" + item.href + "' target='_blank'>" + item.href + "</td>";
@@ -191,8 +192,11 @@ function showResult() {
 							<textarea class="form-control" id="blogList1" name="blogList1" rows="20" placeholder="https://blog.naver.com/ijw0111 
 https://blog.naver.com/tarjanil
 https://blog.naver.com/cabbianopiu">
-https://m.blog.naver.com/mdysd7
-https://m.blog.naver.com/cabbianopiu</textarea>
+https://blog.naver.com/mdysd7
+https://blog.naver.com/ijw0111
+https://blog.naver.com/tarjanil
+https://blog.naver.com/kagurazuki
+https://blog.naver.com/cabbianopiu</textarea>
 						</div>
 						<div class="col-2">
 							<label><span class="asterisk">*</span>블로그 주소2</label>
@@ -252,15 +256,17 @@ https://m.blog.naver.com/cabbianopiu</textarea>
 						<div class="table-responsive">
 							<table class="table table-bordered" id="dataTable1" width="100%" cellspacing="0">
 								<colgroup>
+									<col width="4%" />
 									<col width="15%" />
 									<col width="15%" />
 									<col width="23%" />
-									<col width="33%" />
+									<col width="29%" />
 									<col width="7%" />
 									<col width="7%" />
 								</colgroup>
 								<thead>
 									<tr>
+										<th>No.</th>
 										<th>키워드</th>
 										<th>블로그명</th>
 										<th>블로그주소</th>
@@ -281,15 +287,17 @@ https://m.blog.naver.com/cabbianopiu</textarea>
 						  <div class="table-responsive">
 							<table class="table table-bordered" id="dataTable2" width="100%" cellspacing="0">
 								<colgroup>
+									<col width="4%" />
 									<col width="15%" />
 									<col width="15%" />
 									<col width="23%" />
-									<col width="33%" />
+									<col width="29%" />
 									<col width="7%" />
 									<col width="7%" />
 								</colgroup>
 								<thead>
 									<tr>
+										<th>No.</th>
 										<th>키워드</th>
 										<th>블로그명</th>
 										<th>블로그주소</th>
@@ -310,15 +318,17 @@ https://m.blog.naver.com/cabbianopiu</textarea>
 						  <div class="table-responsive">
 							<table class="table table-bordered" id="dataTable3" width="100%" cellspacing="0">
 								<colgroup>
+									<col width="4%" />
 									<col width="15%" />
 									<col width="15%" />
 									<col width="23%" />
-									<col width="33%" />
+									<col width="29%" />
 									<col width="7%" />
 									<col width="7%" />
 								</colgroup>
 								<thead>
 									<tr>
+										<th>No.</th>
 										<th>키워드</th>
 										<th>블로그명</th>
 										<th>블로그주소</th>
@@ -339,15 +349,17 @@ https://m.blog.naver.com/cabbianopiu</textarea>
 						  <div class="table-responsive">
 							<table class="table table-bordered" id="dataTable4" width="100%" cellspacing="0">
 								<colgroup>
+									<col width="4%" />
 									<col width="15%" />
 									<col width="15%" />
 									<col width="23%" />
-									<col width="33%" />
+									<col width="29%" />
 									<col width="7%" />
 									<col width="7%" />
 								</colgroup>
 								<thead>
 									<tr>
+										<th>No.</th>
 										<th>키워드</th>
 										<th>블로그명</th>
 										<th>블로그주소</th>
@@ -368,15 +380,17 @@ https://m.blog.naver.com/cabbianopiu</textarea>
 						  <div class="table-responsive">
 							<table class="table table-bordered" id="dataTable5" width="100%" cellspacing="0">
 								<colgroup>
+									<col width="4%" />
 									<col width="15%" />
 									<col width="15%" />
 									<col width="23%" />
-									<col width="33%" />
+									<col width="29%" />
 									<col width="7%" />
 									<col width="7%" />
 								</colgroup>
 								<thead>
 									<tr>
+										<th>No.</th>
 										<th>키워드</th>
 										<th>블로그명</th>
 										<th>블로그주소</th>

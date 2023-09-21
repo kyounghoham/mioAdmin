@@ -28,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class IntergrationService {
 
+	private int number = 0;
 	public void startCrawling(Map<String, Object> param, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		Map<String, Object> resultMap = new HashMap<>();
 		List<Map<String, Object>> resultList = new ArrayList<>();
@@ -48,6 +49,7 @@ public class IntergrationService {
         
 		try {
 			for(int j=0; j<blogList.size(); j++) {
+				number = 0;
 				for(int i=1; i<=totalCnt; i++) {
 					int idx = i-1;
 					String keyword = keywordList[idx];
@@ -68,7 +70,7 @@ public class IntergrationService {
 				// 서버에 list 객체 전달
 				Gson gson = new Gson(); // 또는 다른 JSON 라이브러리 사용
 				String json = gson.toJson(resultList); // 리스트를 JSON 문자열로 변환
-				out.println("data"+ j+1 + ": " + json + "\n\n");
+				out.println("data"+ (j+1) + ": " + json + "\n\n");
 				out.flush();
 				
 				// 초기화
@@ -151,6 +153,8 @@ public class IntergrationService {
 					String href_path = CommonUtils.getPath(href).split("/")[1];
 					if (href_path.contains(blog_path)) {
 						Map<String, Object> map = new HashMap<>();
+						number++;
+						map.put("number", number);
 						map.put("type", "pc");
 						map.put("keyword", keyword);
 						map.put("rank", i + 1);

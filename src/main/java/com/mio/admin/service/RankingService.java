@@ -46,6 +46,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RankingService {
 
+	private int number = 0;
 	public void startCrawling(Map<String, Object> param, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		Map<String, Object> resultMap = new HashMap<>();
 		List<Map<String, Object>> resultList = new ArrayList<>();
@@ -125,7 +126,9 @@ public class RankingService {
 					String href_path = CommonUtils.getPath(href);
 					String blog_path = CommonUtils.getPath(blog);
 					if (href_path.equals(blog_path)) {
+						number++;
 						Map<String, Object> map = new HashMap<>();
+						map.put("number", number);
 						map.put("type", "pc");
 						map.put("keyword", keyword);
 						map.put("rank", i + 1);
