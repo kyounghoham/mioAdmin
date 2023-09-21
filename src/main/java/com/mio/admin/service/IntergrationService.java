@@ -54,15 +54,16 @@ public class IntergrationService {
 					// PC 조회
 					pcCrawling(keyword, blogList.get(j), resultList);
 					
+					// 1초 딜레이
+					Thread.sleep(600);
+					
 					// 서버로 진행상황 전달
 					int a = i + (j*totalCnt);
 					float percent = (a) * 100 / (totalCnt * blogList.size());
 					out.println((int) percent);
 					out.flush();
-					
-					// 1초 딜레이
-					Thread.sleep(1000);
 				}
+				Thread.sleep(100);
 				
 				// 서버에 list 객체 전달
 				Gson gson = new Gson(); // 또는 다른 JSON 라이브러리 사용
@@ -113,36 +114,51 @@ public class IntergrationService {
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_60);
 
 		try {
-			String url = "https://search.naver.com/search.naver?nso=&where=blog&query=" + URLEncoder.encode(keyword, "UTF-8");
+			String url = "https://m.search.naver.com/search.naver?where=m_view&sm=mtb_jum&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = htmlUnit.getHtmlPageNonCss(webClient, url);
 
 			// 불필요 dom 제거 (헤더, 푸터, 스크립트)
-			CommonUtils.removeDom(page);
+//			CommonUtils.removeDom(page);
 
 			// 컨텐츠
-			DomNode main = page.querySelector("#main_pack");
+//			DomNode main = page.querySelector("._panel");
 
 			// 게시물 리스트
-			DomNodeList<DomNode> li_list = main.querySelectorAll("ul.lst_total li");
+			DomNodeList<DomNode> li_list = page.querySelectorAll("ul.lst_total li._svp_item");
 			for (int i = 0; i < li_list.size(); i++) {
 				// 30개 * 블로그 리스트 검사
 				DomNode item = li_list.get(i);
 				HtmlAnchor anchor = item.querySelector(".total_tit");
-				String name = item.querySelector(".sub_name").asText();
+				DomNode adNode = item.querySelector(".spview.ico_ad");
 				String title = anchor.asText();
 				String href = anchor.getAttribute("href");
+				String adFlag = "N";
+				String name = "";
+				
+				// 광고여부 체크
+				if(adNode != null) {
+					adFlag = "Y";
+					name = item.querySelector(".source_txt.name").asText();
+					
+					page = htmlUnit.getHtmlPageNonCss(webClient, href);
+					href = page.getBaseURL().toString();
+				} else {
+					name = item.querySelector(".sub_name").asText();
+				}
 
 				for (String blog : blogList) {
-					String path = CommonUtils.getPath(blog);
-					if (href.contains(path)) {
+					String blog_path = CommonUtils.getPath(blog).split("/")[1];
+					String href_path = CommonUtils.getPath(href).split("/")[1];
+					if (href_path.contains(blog_path)) {
 						Map<String, Object> map = new HashMap<>();
 						map.put("type", "pc");
 						map.put("keyword", keyword);
 						map.put("rank", i + 1);
 						map.put("name", name);
 						map.put("title", title);
-						map.put("href", href);
-						map.put("blog", blog);
+						map.put("href", href.replace("m.blog", "blog").replace("blog", "m.blog"));
+						map.put("blog", blog.replace("m.blog", "blog").replace("blog", "m.blog"));
+						map.put("adFlag", adFlag);
 						resultList.add(map);
 					}
 				}

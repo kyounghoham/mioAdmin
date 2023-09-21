@@ -66,6 +66,8 @@ function startProgress() {
 	var blogList4 = $("#blogList4").val().trim();
 	var blogList5 = $("#blogList5").val().trim();
 	
+	xhr.previous_text = "";
+	
 	$.ajax({
         type: 'GET',
         url: '/intergration/startCrawling',
@@ -96,13 +98,22 @@ function startProgress() {
 						var list = JSON.parse(jsonData);
 						var html = "";
 						for(item of list) {
-							html += "<tr>";
+							if(item.adFlag == 'Y') {
+								html += "<tr style='background:yellow'>";	
+							} else {
+								html += "<tr>";
+							}
 							html += "	<td>" + item.keyword + "</td>";
 							html += "	<td>" + item.name + "</td>";
-							html += "	<td><a href='" + item.blog + "' target='_blank'>" + item.blog + "</td>";
-							html += "	<td><a href='" + item.href + "' target='_blank'>" + item.title + "</td>";
+							html += "	<td><a href='" + item.href + "' target='_blank'>" + item.href + "</td>";
+							if(item.adFlag == 'Y') {
+								html += "	<td><a href='" + item.href + "' target='_blank'><span style='border:1px solid black; padding: 0px 10px; border-radius: 15px;'>광고</span>&nbsp;" + item.title + "</td>";
+							} else {
+								html += "	<td><a href='" + item.href + "' target='_blank'>" + item.title + "</td>";
+							}
 							html += "	<td>" + item.rank + "</td>";
-							html += "	<td>" + (item.rank > 15 ? '-' : item.rank) + "</td>";
+							html += "	<td>" + item.rank + "</td>";
+							// html += "	<td>" + (item.rank > 15 ? '-' : item.rank) + "</td>";
 							html += "</tr>";
 						}
 						$("#tableBody" + number).html(html);
@@ -111,10 +122,15 @@ function startProgress() {
 						
 						if($("#progress-bar").text() == '100%') {
 							$("#progressClose").removeClass('hide');
+							xhr.previous_text = "";
 						}
 					} else {
 						$("#progress-bar").text(Number(result) + "%");
 	                    $("#progress-bar").css("width", Number(result) + "%");
+	                    
+	                    if(result.trim() == '100') {
+							xhr.previous_text = "";
+						}
 					}
                 }
                 xhr.previous_text = e.currentTarget.responseText;
@@ -168,13 +184,15 @@ function showResult() {
 <textarea class="form-control" id="keywordList" name="keywordList" rows="20" placeholder="수원산부인과
 대구 임신중절수술
 강남산부인과
-부천산부인과"></textarea>
+부천산부인과">강남산부인과</textarea>
 						</div>
 						<div class="col-2">
 							<label><span class="asterisk">*</span>블로그 주소1</label>
 							<textarea class="form-control" id="blogList1" name="blogList1" rows="20" placeholder="https://blog.naver.com/ijw0111 
 https://blog.naver.com/tarjanil
-https://blog.naver.com/cabbianopiu"></textarea>
+https://blog.naver.com/cabbianopiu">
+https://m.blog.naver.com/mdysd7
+https://m.blog.naver.com/cabbianopiu</textarea>
 						</div>
 						<div class="col-2">
 							<label><span class="asterisk">*</span>블로그 주소2</label>
@@ -194,7 +212,7 @@ https://blog.naver.com/cabbianopiu"></textarea>
 						</div>
 					</div>
 					<div style="text-align: center;">
-						<a href="#" class="btn btn-primary btn-icon-split" onclick="searchRank();">
+						<a href="#" class="btn btn-primary btn-icon-split" onclick="searchRank(); return false;">
 		                    <span class="text">통합조회</span>
 		                </a>
 					</div>
