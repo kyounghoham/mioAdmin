@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,8 +32,8 @@ public class RankingController {
 		return "ranking/index";
 	}
 
-	@RequestMapping("/startCrawling")
-	public void startCrawling(@RequestParam Map<String, Object> param, HttpServletRequest request, HttpServletResponse response, Model model) throws Exception {
+	@RequestMapping(value="/startCrawling", method = { RequestMethod.GET, RequestMethod.POST})
+	public void startCrawling(@RequestBody Map<String, Object> param, HttpServletRequest request, HttpServletResponse response, Model model) throws Exception {
 		rankingService.startCrawling(param, request, response);
 	}
 

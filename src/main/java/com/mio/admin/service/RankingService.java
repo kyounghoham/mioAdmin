@@ -47,15 +47,12 @@ import lombok.RequiredArgsConstructor;
 public class RankingService {
 
 	private int number = 0;
+	
 	public void startCrawling(Map<String, Object> param, HttpServletRequest request, HttpServletResponse response) throws Exception {
-		Map<String, Object> resultMap = new HashMap<>();
-		List<Map<String, Object>> resultList = new ArrayList<>();
+		number = 0;
 		
 		String[] keywordList = CommonUtils.getParameter(param, "keywordList", "").split("\n");
 		String[] blogList = CommonUtils.getParameter(param, "blogList", "").split("\n");
-		
-		keywordList = CommonUtils.uniqueArray(keywordList);
-		blogList = CommonUtils.uniqueArray(blogList);
 		
 		int totalCnt = keywordList.length;
 		
@@ -67,41 +64,38 @@ public class RankingService {
         
 		try {
 			for(int i=0; i<totalCnt; i++) {
+				number++;
+				Map<String, Object> resultMap = new HashMap<>();
 				String keyword = keywordList[i];
+				String blog = blogList[i];
+				
 				// PC 조회
-				pcCrawling(keyword, blogList, resultList);
+				resultMap = pcCrawling(keyword, blog);
 				
 				// 1초 딜레이
-				Thread.sleep(1000);
+				Thread.sleep(500);
 				
 				// 서버로 진행상황 전달
 		        float percent = (i+1) * 100 / totalCnt;
-		        out.println((int) percent);
+		        resultMap.put("percent", (int) percent);
+		        Gson gson = new Gson();
+		        String json = gson.toJson(resultMap);
+		        
+		        out.println(json);
 		        out.flush();
 			}
-			Thread.sleep(100);
-			
-			// 서버에 list 객체 전달
-			Gson gson = new Gson(); // 또는 다른 JSON 라이브러리 사용
-			String json = gson.toJson(resultList); // 리스트를 JSON 문자열로 변환
-			out.println("data: " + json + "\n\n");
-			out.flush();
 
 		} catch(Exception e) {
 			e.printStackTrace();
 		} finally {
 			out.close();
 		}
-
-		// map으로 전달할거면 사용
-		resultMap.put("resultList", resultList);
 	}
 	
-	// 크롤링
-	public void pcCrawling(String keyword, String[] blogList, List<Map<String, Object>> resultList) {
+	public Map<String, Object> pcCrawling(String keyword, String blog) {
 		HtmlUnit htmlUnit = new HtmlUnit();
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_60);
-
+		Map<String, Object> resultMap = new HashMap<>();
 		try {
 			String url = "https://search.naver.com/search.naver?nso=&where=blog&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = htmlUnit.getHtmlPageNonCss(webClient, url);
@@ -114,6 +108,17 @@ public class RankingService {
 
 			// 게시물 리스트
 			DomNodeList<DomNode> li_list = main.querySelectorAll("ul.lst_total li");
+			
+			resultMap.put("number", number);
+			resultMap.put("type", "pc");
+			resultMap.put("keyword", keyword);
+			resultMap.put("href", blog);
+			resultMap.put("blog", blog);
+			resultMap.put("rank", "-");
+			resultMap.put("rank2", "-");
+			resultMap.put("name", "-");
+			resultMap.put("title", "-");
+			
 			for (int i = 0; i < li_list.size(); i++) {
 				// 30개 * 블로그 리스트 검사
 				DomNode item = li_list.get(i);
@@ -122,23 +127,13 @@ public class RankingService {
 				String title = anchor.asText();
 				String href = anchor.getAttribute("href");
 
-				for (String blog : blogList) {
-					String href_path = CommonUtils.getPath(href);
-					String blog_path = CommonUtils.getPath(blog);
-					if (href_path.equals(blog_path)) {
-						number++;
-						Map<String, Object> map = new HashMap<>();
-						map.put("number", number);
-						map.put("type", "pc");
-						map.put("keyword", keyword);
-						map.put("rank", i + 1);
-						map.put("rank2", i + 1);
-						map.put("name", name);
-						map.put("title", title);
-						map.put("href", href);
-						map.put("blog", blog);
-						resultList.add(map);
-					}
+				String href_path = CommonUtils.getPath(href);
+				String blog_path = CommonUtils.getPath(blog);
+				if (href_path.equals(blog_path)) {
+					resultMap.put("rank", i + 1);
+					resultMap.put("rank2", i + 1);
+					resultMap.put("name", name);
+					resultMap.put("title", title);
 				}
 			}
 
@@ -147,8 +142,10 @@ public class RankingService {
 		} finally {
 			webClient.close();
 		}
+		
+		return resultMap;
 	}
-
+	
 	public void xlsDownload(Map<String, Object> param, HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
 
 		List<Map<String, Object>> dataList = new ArrayList<>();
@@ -302,19 +299,3 @@ public class RankingService {
 		return s.matches("[-+]?\\d*\\.?\\d+");
 	}
 }
-
-/*
- 
-수원산부인과 
-대구 임신중절수술 
-강남산부인과 
-부천산부인과
- 
-https://blog.naver.com/ijw0111/223210254356 
-https://blog.naver.com/tarjanil/223199460600
-https://blog.naver.com/kagurazuki/223199614544 
-https://blog.naver.com/cabbianopiu/223199663615
-
-
- */
-

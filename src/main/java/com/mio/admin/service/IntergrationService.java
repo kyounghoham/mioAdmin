@@ -35,7 +35,7 @@ public class IntergrationService {
 		List<String[]> blogList = new ArrayList<>();
 		
 		String[] keywordList = CommonUtils.getParameter(param, "keywordList", "").split("\n");
-		keywordList = CommonUtils.uniqueArray(keywordList);
+//		keywordList = CommonUtils.uniqueArray(keywordList);
 		
 		setBlog(param, blogList);
 		
@@ -57,7 +57,7 @@ public class IntergrationService {
 					pcCrawling(keyword, blogList.get(j), resultList);
 					
 					// 1초 딜레이
-					Thread.sleep(600);
+					Thread.sleep(500);
 					
 					// 서버로 진행상황 전달
 					int a = i + (j*totalCnt);

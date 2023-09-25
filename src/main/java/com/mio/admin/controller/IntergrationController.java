@@ -7,7 +7,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.mio.admin.service.IntergrationService;
@@ -29,8 +31,8 @@ public class IntergrationController {
 		return "intergration/index";
 	}
 
-	@RequestMapping("/startCrawling")
-	public void startCrawling(@RequestParam Map<String, Object> param, HttpServletRequest request, HttpServletResponse response, Model model) throws Exception {
+	@RequestMapping(value="/startCrawling", method = { RequestMethod.GET, RequestMethod.POST})
+	public void startCrawling(@RequestBody Map<String, Object> param, HttpServletRequest request, HttpServletResponse response, Model model) throws Exception {
 		intergrationService.startCrawling(param, request, response);
 	}
 

@@ -10,6 +10,8 @@ var xhr = $.ajaxSettings.xhr();
 xhr.previous_text = "";
 var headerList = ['키워드', '블로그명', '블로그주소', '제목', 'PC순위', 'MO순위']
 var bodyList = []
+var dataTable1;
+
 $(document).ready(function() {
 })
 
@@ -52,56 +54,58 @@ function startProgress() {
     var keywordList = $("#keywordList").val().trim();
 	var blogList = $("#blogList").val().trim();
 	xhr.previous_text = "";
+	if(dataTable1) {
+		dataTable1.destroy();
+		$("#tableBody").html('');
+		bodyList = [];
+	}
+	
 	$.ajax({
-        type: 'GET',
+        type: 'POST',
         url: '/ranking/startCrawling',
-        contentType: 'text/plain;charset=UTF-8', // 서버에서 스트리밍되는 데이터의 형식
-        data : {
+        contentType: 'application/json;charset=UTF-8', // 서버에서 스트리밍되는 데이터의 형식
+        // contentType: 'text/plain;charset=UTF-8', // 서버에서 스트리밍되는 데이터의 형식
+        data : JSON.stringify({
 			"keywordList" : keywordList,
 			"blogList": blogList
-		},
+		}),
 		dataType : "json",
 		async: true,
         xhrFields: {
             onprogress: function (e) {
-                var result = e.currentTarget.responseText.substring(xhr.previous_text.length);
-                // Update the progress bar
-                console.log(result)
+				var result = e.currentTarget.responseText.substring(xhr.previous_text.length);
                 if (result !== "") {
-					if(result.indexOf("data:") > -1) {
-						// 주어진 JSON 문자열
-						var jsonString = result;
-						// "data:"를 삭제하여 JSON 문자열 추출
-						var jsonData = jsonString.substring(jsonString.indexOf('['));
-						// JSON 문자열을 JSON 객체로 파싱
-						var list = JSON.parse(jsonData);
-						bodyList = list;
-						var html = "";
-						for(item of list) {
-							html += "<tr>";
-							html += "	<td>" + item.number + "</td>";
-							html += "	<td>" + item.keyword + "</td>";
-							html += "	<td>" + item.name + "</td>";
-							html += "	<td><a href='" + item.blog + "' target='_blank'>" + item.blog + "</td>";
-							html += "	<td><a href='" + item.href + "' target='_blank'>" + item.title + "</td>";
-							html += "	<td>" + item.rank + "</td>";
-							html += "	<td>" + (item.rank > 15 ? '-' : item.rank) + "</td>";
-							html += "</tr>";
-						}
-						$("#tableBody").html(html);
-						
-						$('#dataTable1').DataTable();
+					
+					var jsonString = result;
+					var jsonObject = JSON.parse(jsonString);
+					var item = jsonObject;
+					bodyList.push(item);
+					var html = "";
+						html += "<tr>";
+						html += "	<td>" + item.number + "</td>";
+						html += "	<td>" + item.keyword + "</td>";
+						html += "	<td>" + item.name + "</td>";
+						html += "	<td><a href='" + item.blog + "' target='_blank'>" + item.blog + "</td>";
+						html += "	<td><a href='" + item.href + "' target='_blank'>" + item.title + "</td>";
+						html += "	<td>" + item.rank + "</td>";
+						html += "	<td>" + (item.rank > 15 ? '-' : item.rank) + "</td>";
+						html += "</tr>";
+					
+					html = html.replaceAll('undefined', '-');
+					$("#tableBody").append(html);
+					
+					var percent = Number(item.percent);
+					$("#progress-bar").text(percent + "%");
+                    $("#progress-bar").css("width", percent + "%");
+                    
+	                xhr.previous_text = e.currentTarget.responseText;
 
-						if($("#progress-bar").text() == '100%') {
-							$("#progressClose").removeClass('hide');
-							xhr.previous_text = "";
-						}
-					} else {
-						$("#progress-bar").text(Number(result) + "%");
-	                    $("#progress-bar").css("width", Number(result) + "%");
+					if(percent == 100) {
+						dataTable1 = $('#dataTable1').DataTable();
+						$("#progressClose").removeClass('hide');
+						xhr.previous_text = '';
 					}
                 }
-                xhr.previous_text = e.currentTarget.responseText;
             }
         },
     });
