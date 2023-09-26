@@ -97,7 +97,7 @@ public class RankingService {
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_60);
 		Map<String, Object> resultMap = new HashMap<>();
 		try {
-			String url = "https://search.naver.com/search.naver?nso=&where=blog&query=" + URLEncoder.encode(keyword, "UTF-8");
+			String url = "https://search.naver.com/search.naver?nso=&where=view&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = htmlUnit.getHtmlPageNonCss(webClient, url);
 
 			// 불필요 dom 제거 (헤더, 푸터, 스크립트)
