@@ -105,7 +105,7 @@ function startProgress() {
 						var html = "";
 						for(item of list) {
 							if(item.adFlag == 'Y') {
-								html += "<tr style='background:yellow'>";	
+								html += "<tr'>";	
 							} else {
 								html += "<tr>";
 							}
@@ -114,7 +114,7 @@ function startProgress() {
 							html += "	<td>" + item.name + "</td>";
 							html += "	<td><a href='" + item.href + "' target='_blank'>" + item.href + "</td>";
 							if(item.adFlag == 'Y') {
-								html += "	<td><a href='" + item.href + "' target='_blank'><span style='border:1px solid black; padding: 0px 10px; border-radius: 15px;'>광고</span>&nbsp;" + item.title + "</td>";
+								html += "	<td><a href='" + item.href + "' target='_blank'><span style='border:1px solid #2eb976; padding: 0px 10px; border-radius: 15px; color: #2eb976;'>AD</span><br/>" + item.title + "</td>";
 							} else {
 								html += "	<td><a href='" + item.href + "' target='_blank'>" + item.title + "</td>";
 							}
@@ -188,15 +188,17 @@ function showResult() {
 					<div class="row mb-4">
 						<div class="col-2">
 							<label><span class="asterisk">*</span>검색 키워드</label>
-							<textarea class="form-control" id="keywordList" name="keywordList" rows="20"></textarea>
+							<textarea class="form-control" id="keywordList" name="keywordList" rows="20">강남산부인과
+부천산부인과</textarea>
 						</div>
 						<div class="col-2">
 							<label><span class="asterisk">*</span>블로그 주소1</label>
-							<textarea class="form-control" id="blogList1" name="blogList1" rows="20"></textarea>
+							<textarea class="form-control" id="blogList1" name="blogList1" rows="20">https://blog.naver.com/mdysd7/223121608055
+https://m.blog.naver.com/cabbianopiu/223197462533</textarea>
 						</div>
 						<div class="col-2">
 							<label><span class="asterisk">*</span>블로그 주소2</label>
-							<textarea class="form-control" id="blogList2" name="blogList2" rows="20"></textarea>
+							<textarea class="form-control" id="blogList2" name="blogList2" rows="20">https://blog.naver.com/noneangry/223161284556</textarea>
 						</div>
 						<div class="col-2">
 							<label><span class="asterisk">*</span>블로그 주소3</label>
