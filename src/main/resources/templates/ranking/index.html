@@ -64,7 +64,6 @@ function startProgress() {
         type: 'POST',
         url: '/ranking/startCrawling',
         contentType: 'application/json;charset=UTF-8', // 서버에서 스트리밍되는 데이터의 형식
-        // contentType: 'text/plain;charset=UTF-8', // 서버에서 스트리밍되는 데이터의 형식
         data : JSON.stringify({
 			"keywordList" : keywordList,
 			"blogList": blogList
@@ -88,10 +87,9 @@ function startProgress() {
 						html += "	<td><a href='" + item.blog + "' target='_blank'>" + item.blog + "</td>";
 						html += "	<td><a href='" + item.href + "' target='_blank'>" + item.title + "</td>";
 						html += "	<td>" + item.rank + "</td>";
-						html += "	<td>" + (item.rank > 15 ? '-' : item.rank) + "</td>";
+						html += "	<td>" + item.rank + "</td>";
 						html += "</tr>";
 					
-					html = html.replaceAll('undefined', '-');
 					$("#tableBody").append(html);
 					
 					var percent = Number(item.percent);

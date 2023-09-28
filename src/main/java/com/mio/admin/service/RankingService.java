@@ -73,7 +73,7 @@ public class RankingService {
 				resultMap = pcCrawling(keyword, blog);
 				
 				// 1초 딜레이
-				Thread.sleep(500);
+				Thread.sleep(1000);
 				
 				// 서버로 진행상황 전달
 		        float percent = (i+1) * 100 / totalCnt;
@@ -97,20 +97,13 @@ public class RankingService {
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_60);
 		Map<String, Object> resultMap = new HashMap<>();
 		try {
-			String url = "https://search.naver.com/search.naver?nso=&where=view&query=" + URLEncoder.encode(keyword, "UTF-8");
+			String url = "https://m.search.naver.com/search.naver?where=m_view&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = htmlUnit.getHtmlPageNonCss(webClient, url);
 
-			// 불필요 dom 제거 (헤더, 푸터, 스크립트)
-			CommonUtils.removeDom(page);
-
-			// 컨텐츠
-			DomNode main = page.querySelector("#main_pack");
-
 			// 게시물 리스트
-			DomNodeList<DomNode> li_list = main.querySelectorAll("ul.lst_total li");
+			DomNodeList<DomNode> li_list = page.querySelectorAll("ul.lst_total li._svp_item");
 			
 			resultMap.put("number", number);
-			resultMap.put("type", "pc");
 			resultMap.put("keyword", keyword);
 			resultMap.put("href", blog);
 			resultMap.put("blog", blog);
@@ -123,20 +116,47 @@ public class RankingService {
 				// 30개 * 블로그 리스트 검사
 				DomNode item = li_list.get(i);
 				HtmlAnchor anchor = item.querySelector(".total_tit");
-				String name = item.querySelector(".sub_name").asText();
+				DomNode adNode = item.querySelector(".spview.ico_ad");
 				String title = anchor.asText();
 				String href = anchor.getAttribute("href");
+				String adFlag = "N";
+				String name = "";
+				String rank = (i + 1 > 10) ? "-" : Integer.toString(i + 1);
+				
+				// 광고여부 체크
+				if(adNode != null) {
+					adFlag = "Y";
+					name = item.querySelector(".source_txt.name").asText();
+					
+					Thread.sleep(500);
+					page = htmlUnit.getHtmlPageNonCss(webClient, href);
+					href = page.getBaseURL().toString();
+				} else {
+					name = item.querySelector(".sub_name").asText();
+				}
 
 				String href_path = CommonUtils.getPath(href);
 				String blog_path = CommonUtils.getPath(blog);
-				if (href_path.equals(blog_path)) {
-					resultMap.put("rank", i + 1);
-					resultMap.put("rank2", i + 1);
+				if (href_path.contains(blog_path)) {
+					resultMap.put("rank", rank);
+					resultMap.put("rank2", rank);
 					resultMap.put("name", name);
 					resultMap.put("title", title);
 				}
 			}
-
+			
+			String name = CommonUtils.getParameter(resultMap, "name", "-");
+			if(name.equals("-")) {
+				// 일치하지 않으면 url가서 제목이라도 가져옴
+				Thread.sleep(500);
+				page = htmlUnit.getHtmlPageNonCss(webClient, blog);
+				
+				String blogNm = page.querySelector(".blog_author").getTextContent().trim();
+				String blogTitle = page.querySelector(".se-title-text").getTextContent().trim();
+				resultMap.put("name", blogNm);
+				resultMap.put("title", blogTitle);
+			}
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {

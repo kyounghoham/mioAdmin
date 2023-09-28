@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.stereotype.Service;
+import org.springframework.ui.ModelMap;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -19,6 +20,10 @@ import com.gargoylesoftware.htmlunit.html.DomNodeList;
 import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mio.admin.common.CommonUtils;
 import com.mio.admin.common.HtmlUnit;
 
@@ -30,13 +35,8 @@ public class IntergrationService {
 
 	private int number = 0;
 	public void startCrawling(Map<String, Object> param, HttpServletRequest request, HttpServletResponse response) throws Exception {
-		Map<String, Object> resultMap = new HashMap<>();
-		List<Map<String, Object>> resultList = new ArrayList<>();
 		List<String[]> blogList = new ArrayList<>();
-		
 		String[] keywordList = CommonUtils.getParameter(param, "keywordList", "").split("\n");
-//		keywordList = CommonUtils.uniqueArray(keywordList);
-		
 		setBlog(param, blogList);
 		
 		int totalCnt = keywordList.length;
@@ -47,34 +47,39 @@ public class IntergrationService {
         response.setContentType("text/html;charset=utf-8");
         PrintWriter out = response.getWriter();
         
+        // 
 		try {
+			// 블로그 리스트 loop
 			for(int j=0; j<blogList.size(); j++) {
+				// 블로그 마다 10초 쉬는 텀 제공
+				Thread.sleep(1000);
+				// 블로그 별 게시글번호
 				number = 0;
-				for(int i=1; i<=totalCnt; i++) {
-					int idx = i-1;
-					String keyword = keywordList[idx];
-					// PC 조회
+				
+				// 키워드 리스트 loop
+				for(int i=0; i<totalCnt; i++) {
+					Map<String, Object> resultMap = new HashMap<>();
+					List<Map<String, Object>> resultList = new ArrayList<>();
+					String keyword = keywordList[i];
+					
+					// 크롤링
 					pcCrawling(keyword, blogList.get(j), resultList);
 					
 					// 1초 딜레이
-					Thread.sleep(500);
+					Thread.sleep(1000);
 					
 					// 서버로 진행상황 전달
-					int a = i + (j*totalCnt);
+					int a = (i+1) + (j*totalCnt);
 					float percent = (a) * 100 / (totalCnt * blogList.size());
-					out.println((int) percent);
-					out.flush();
+			        resultMap.put("percent", (int) percent);
+			        resultMap.put("resultList", resultList);
+			        resultMap.put("number", j+1);	// 블로그 번호
+			        Gson gson = new Gson();
+			        String json = gson.toJson(resultMap);
+			        
+			        out.println(json);
+			        out.flush();
 				}
-				Thread.sleep(100);
-				
-				// 서버에 list 객체 전달
-				Gson gson = new Gson(); // 또는 다른 JSON 라이브러리 사용
-				String json = gson.toJson(resultList); // 리스트를 JSON 문자열로 변환
-				out.println("data"+ (j+1) + ": " + json + "\n\n");
-				out.flush();
-				
-				// 초기화
-				resultList = new ArrayList<>();
 			}
 
 
@@ -83,9 +88,6 @@ public class IntergrationService {
 		} finally {
 			out.close();
 		}
-
-		// map으로 전달할거면 사용
-		resultMap.put("resultList", resultList);
 	}
 
 	private void setBlog(Map<String, Object> param, List<String[]> blogList) throws Exception {
@@ -94,13 +96,6 @@ public class IntergrationService {
 		String[] blogList3 = CommonUtils.getParameter(param, "blogList3", "").split("\n");
 		String[] blogList4 = CommonUtils.getParameter(param, "blogList4", "").split("\n");
 		String[] blogList5 = CommonUtils.getParameter(param, "blogList5", "").split("\n");
-		
-		// 중복제거
-		blogList1 = CommonUtils.uniqueArray(blogList1);
-		blogList2 = CommonUtils.uniqueArray(blogList2);
-		blogList3 = CommonUtils.uniqueArray(blogList3);
-		blogList4 = CommonUtils.uniqueArray(blogList4);
-		blogList5 = CommonUtils.uniqueArray(blogList5);
 		
 		// loop 돌리기 위해 배열로 저장
 		if(!blogList1[0].equals("")) blogList.add(blogList1);
@@ -119,12 +114,6 @@ public class IntergrationService {
 			String url = "https://m.search.naver.com/search.naver?where=m_view&sm=mtb_jum&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = htmlUnit.getHtmlPageNonCss(webClient, url);
 
-			// 불필요 dom 제거 (헤더, 푸터, 스크립트)
-//			CommonUtils.removeDom(page);
-
-			// 컨텐츠
-//			DomNode main = page.querySelector("._panel");
-
 			// 게시물 리스트
 			DomNodeList<DomNode> li_list = page.querySelectorAll("ul.lst_total li._svp_item");
 			for (int i = 0; i < li_list.size(); i++) {
@@ -142,6 +131,7 @@ public class IntergrationService {
 					adFlag = "Y";
 					name = item.querySelector(".source_txt.name").asText();
 					
+					Thread.sleep(500);
 					page = htmlUnit.getHtmlPageNonCss(webClient, href);
 					href = page.getBaseURL().toString();
 				} else {
@@ -175,25 +165,41 @@ public class IntergrationService {
 		}
 	}
 
+	public void xlsDownload(Map<String, Object> param, HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+		List<Map<String, Object>> dataList = new ArrayList<>();
+		String[] keywordList = CommonUtils.getParameter(param, "keywordList", "").split("\n");
+		String bodyList = CommonUtils.getParameter(param, "bodyList", "");
+
+		JsonElement jsonElement = JsonParser.parseString(bodyList);
+		JsonArray jsonArray = jsonElement.getAsJsonArray();
+		
+		// 전체 검색결과 리스트
+		for(String keyword : keywordList) {
+			keyword = keyword.trim();
+			Map<String, Object> map = new HashMap<>();
+			map.put("keyword", keyword);
+			for (int i = 0; i < jsonArray.size(); i++) {
+				JsonObject item = jsonArray.get(i).getAsJsonObject();
+	            if(keyword.equals(item.get("keyword").getAsString())) {
+	            	String rank = item.get("rank").getAsString();
+	            	map.put("rank"+rank, rank);
+	            }
+			}
+			dataList.add(map);
+		}
+		
+//        for (int i = 0; i < jsonArray.size(); i++) {
+//        	JsonObject item = jsonArray.get(i).getAsJsonObject();
+//            map.put("name", item.get("name").getAsString());
+//            map.put("href", item.get("href").getAsString());
+//            map.put("title", item.get("title").getAsString());
+//            map.put("rank", item.get("rank").getAsString());
+//            dataList.add(map);
+//        }
+        
+        dataList.forEach(item -> {
+        	System.out.println(item.toString());
+        });
+        
+	}
 }
-
-/*
- 
-수원산부인과 
-대구 임신중절수술 
-강남산부인과 
-부천산부인과
- 
-https://blog.naver.com/ijw0111 
-https://blog.naver.com/tarjanil
-https://blog.naver.com/cabbianopiu 
-https://blog.naver.com/kagurazuki
-https://blog.naver.com/kangsn7312 
-https://blog.naver.com/lttyrugv
-https://blog.naver.com/vxztd8s9
-https://blog.naver.com/dtta8i1
-https://blog.naver.com/dkflstjdd
-
-
- */
-

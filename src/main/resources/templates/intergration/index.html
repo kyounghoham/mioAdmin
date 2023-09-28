@@ -15,6 +15,8 @@ textarea {
 <script>
 var xhr = $.ajaxSettings.xhr();
 xhr.previous_text = "";
+var headerList = ['키워드', '블로그명', '블로그주소', '제목', 'PC순위', 'MO순위']
+var bodyList = []
 var dataTableArr = {}
 $(document).ready(function() {
 })
@@ -57,7 +59,6 @@ function searchRank() {
 	startProgress();
 }
 
-// 진행상항 노출
 function startProgress() {
     var keywordList = $("#keywordList").val().trim();
 	var blogList1 = $("#blogList1").val().trim();
@@ -68,11 +69,17 @@ function startProgress() {
 	
 	xhr.previous_text = "";
 	
+	for (let i = 1; i <= 5; i++) {
+		if(dataTableArr[`dataTable${i}`]) {
+			dataTableArr[`dataTable${i}`].destroy();
+			$(`#tableBody${i}`).html('');	
+		}
+	}
+
 	$.ajax({
         type: 'POST',
         url: '/intergration/startCrawling',
         contentType: 'application/json;charset=UTF-8', // 서버에서 스트리밍되는 데이터의 형식
-        // contentType: 'text/plain;charset=UTF-8', // 서버에서 스트리밍되는 데이터의 형식
         data : JSON.stringify({
 			"keywordList" : keywordList,
 			"blogList1": blogList1,
@@ -86,64 +93,74 @@ function startProgress() {
         xhrFields: {
             onprogress: function (e) {
                 var result = e.currentTarget.responseText.substring(xhr.previous_text.length);
-                console.log(result);
-                // Update the progress bar
+                console.log(result)
                 if (result !== "") {
-					if(result.indexOf("data") > -1) {
-						// 주어진 JSON 문자열
-						var jsonString = result;
-						var number = Number(jsonString.substring(4, 5));
-						
-						if(dataTableArr[`dataTable${number}`]) {
-							dataTableArr[`dataTable${number}`].destroy();	
+					
+					var jsonString = result;
+					var jsonObject = JSON.parse(jsonString);
+					var number = jsonObject.number;
+					var percent = Number(jsonObject.percent);
+					
+					var html = "";
+					for(item of jsonObject.resultList) {
+						bodyList.push(item);
+						if(item.adFlag == 'Y') {
+							html += "<tr>";	
+						} else {
+							html += "<tr>";
+						}
+						html += "	<td>" + item.number + "</td>";
+						html += "	<td>" + item.keyword + "</td>";
+						html += "	<td>" + item.name + "</td>";
+						html += "	<td><a href='" + item.href + "' target='_blank'>" + item.href + "</td>";
+						if(item.adFlag == 'Y') {
+							html += "	<td><a href='" + item.href + "' target='_blank'><span style='border:1px solid #2eb976; padding: 0px 10px; border-radius: 15px; color: #2eb976;'>AD</span><br/>" + item.title + "</td>";
+						} else {
+							html += "	<td><a href='" + item.href + "' target='_blank'>" + item.title + "</td>";
+						}
+						html += "	<td>" + item.rank + "</td>";
+						html += "	<td>" + item.rank + "</td>";
+						html += "</tr>";
+					}
+					
+					// 데이터 추가
+					$(`#tableBody${number}`).append(html);
+					
+					$("#progress-bar").text(percent + "%");
+                    $("#progress-bar").css("width", percent + "%");
+                    
+	                xhr.previous_text = e.currentTarget.responseText;
+
+					if(percent == 100) {
+						for (let i = 1; i <= number; i++) {
+							dataTableArr[`dataTable${i}`] = $(`#dataTable${i}`).DataTable();
 						}
 						
-						// "data:"를 삭제하여 JSON 문자열 추출
-						var jsonData = jsonString.substring(jsonString.indexOf('['));
-						// JSON 문자열을 JSON 객체로 파싱
-						var list = JSON.parse(jsonData);
-						var html = "";
-						for(item of list) {
-							if(item.adFlag == 'Y') {
-								html += "<tr'>";	
-							} else {
-								html += "<tr>";
-							}
-							html += "	<td>" + item.number + "</td>";
-							html += "	<td>" + item.keyword + "</td>";
-							html += "	<td>" + item.name + "</td>";
-							html += "	<td><a href='" + item.href + "' target='_blank'>" + item.href + "</td>";
-							if(item.adFlag == 'Y') {
-								html += "	<td><a href='" + item.href + "' target='_blank'><span style='border:1px solid #2eb976; padding: 0px 10px; border-radius: 15px; color: #2eb976;'>AD</span><br/>" + item.title + "</td>";
-							} else {
-								html += "	<td><a href='" + item.href + "' target='_blank'>" + item.title + "</td>";
-							}
-							html += "	<td>" + item.rank + "</td>";
-							html += "	<td>" + item.rank + "</td>";
-							// html += "	<td>" + (item.rank > 15 ? '-' : item.rank) + "</td>";
-							html += "</tr>";
-						}
-						$("#tableBody" + number).html(html);
-						
-						dataTableArr[`dataTable${number}`] = $('#dataTable' + number).DataTable();
-						
-						if($("#progress-bar").text() == '100%') {
-							$("#progressClose").removeClass('hide');
-							xhr.previous_text = "";
-						}
-					} else {
-						$("#progress-bar").text(Number(result) + "%");
-	                    $("#progress-bar").css("width", Number(result) + "%");
-	                    
-	                    if(result.trim() == '100') {
-							xhr.previous_text = "";
-						}
+						$("#progressClose").removeClass('hide');
+						xhr.previous_text = '';
 					}
                 }
-                xhr.previous_text = e.currentTarget.responseText;
             }
         },
     });
+}
+// 키워드 1~5
+// 리스트를 취합 
+// 리스트 던지고, 키워드 기준으로 sorting
+// body리스트를 loop돌면서 keyword 리스트와 일치하는 항목의 rank를 기록 
+// map으로 만들기 랭크 기준 {keyword:강남산부인과, rank1:'', rank2:''...}
+function getBlogList(blog, textArea) {
+	var list = '';
+	if(blog == 'roen') {
+		list = 'https://blog.naver.com/kagurazuki\nhttps://blog.naver.com/tarjanil\nhttps://blog.naver.com/ijw0111\nhttps://blog.naver.com/cabbianopiu';
+	} else if(blog == 'roen2') {
+		list = 'https://blog.naver.com/lttyrugv\nhttps://blog.naver.com/vxztd8s9\nhttps://blog.naver.com/lognav\nhttps://blog.naver.com/dtta8i1\nhttps://blog.naver.com/kangsn7312\nhttps://blog.naver.com/wldus9211247\nhttps://blog.naver.com/chltmdska\nhttps://blog.naver.com/msbrva96\nhttps://blog.naver.com/rytnall\nhttps://blog.naver.com/dlatnwjdd\nhttps://blog.naver.com/tlsrjwlss\nhttps://blog.naver.com/dkflstjdd\nhttps://blog.naver.com/dndlfkss';
+	} else if(blog == 'apple') {
+		list = 'https://m.blog.naver.com/jnhk2423\nhttps://m.blog.naver.com/s2010ca\nhttps://m.blog.naver.com/clubd82\nhttps://m.blog.naver.com/noneangry\nhttps://m.blog.naver.com/aerdbeqdkzzrp\nhttps://m.blog.naver.com/vlpjmp83bf\nhttps://m.blog.naver.com/fxnsepqxrc\nhttps://m.blog.naver.com/mpweqmrpiwnr\nhttps://m.blog.naver.com/ln53apvclh\nhttps://m.blog.naver.com/96bkrogrkx\nhttps://m.blog.naver.com/gavin82895\nhttps://m.blog.naver.com/ahenrk7280\nhttps://m.blog.naver.com/xapxtksv57\nhttps://m.blog.naver.com/gkawnsdn0818\nhttps://m.blog.naver.com/fxnsepqxrc\nhttps://m.blog.naver.com/tjddlwjs29982\nhttps://m.blog.naver.com/virtual9894\nhttps://m.blog.naver.com/rate2720\nhttps://m.blog.naver.com/rjwuqjfufk\n';
+	} else {
+		list = '대구 임신중절수술\n강남산부인과\n부천산부인과\n안산산부인과\n임신중절수술 방법\n낙태 법\n강남산부인과\n수원산부인과\n중절수술후 생리\n낙태수술 합법\n인천산부인과\n낙태 알약\n안산 임신중절수술\n여의도산부인과\n성병완치\n부산 낙태수술\n낙태보호자\n일산 낙태수술\n여성성병종류\n가드넬라균원인\n수원 낙태수술\n부산산부인과\n성병사마귀\n유레아플라즈마치료\n부천 낙태수술\n서초구 임신중절수술 낙태수술\n역삼 임신중절수술 낙태수술\n미레나생리통\n칸디다질염냉\n양재 임신중절수술 낙태수술\n양재역 임신중절수술 낙태수술\n교대역 낙태수술\n반포역 낙태수술\n수원산부인과\n구월동산부인과\n부정출혈생리\n부산 낙태수술\n잠원동 임신중절수술 낙태수술\n잠원역 임신중절수술 낙태수술\n대구산부인과\n중절수술 기록\n방배 임신중절수술 낙태수술\n방배역 임신중절수술 낙태수술\n부천산부인과\n콘딜로마완치\n부천 임신중절수술\n의정부산부인과\n착상혈나오는시기\n일산 임신중절수술\n잠실 임신중절수술\n안산 낙태수술\n의정부 임신중절수술\n유레아플라즈마치료\n냉많이나오는이유\n서면산부인과\n일산 낙태수술\n잠실역산부인과\n사후피임약처방\n천호산부인과\n인천산부인과\n낙태 후유증\n낙태 기록\n잠실산부인과\n관계후피임약'
+	}
+	$(`#${textArea}`).val(list);
 }
 
 // 프로그래스 초기화
@@ -158,70 +175,91 @@ function initProgress() {
 function showResult() {
 	// 검색창 숨김
 	if($(".fas.search").hasClass("fa-arrow-up")) {
-		toggleArea("search");
+		toggleArea("search");	
 	}
 	// 결과창 오픈
 	if($(".fas.result").hasClass("fa-arrow-down")) {
 		toggleArea("result");
 	}
 }
+
+function downloadExcel() {
+	$("#headerList").val(JSON.stringify(headerList));
+	$("#bodyList").val(JSON.stringify(bodyList));
+	$("#frm").submit();
+}
 </script>
 <div class="container-fluid">
-	<!-- Page Heading -->
-	<div class="d-sm-flex align-items-center justify-content-between mb-4">
-		<h1 class="h3 mb-0 text-gray-800">통합조회</h1>
-	</div>
+	<form id="frm" name="frm" action="/intergration/xlsDownload" method="post">
+		<input type="hidden" id="headerList" name="headerList" value="">
+		<input type="hidden" id="bodyList" name="bodyList" value="">
 
-	<!-- 검색 영역 -->
-	<div class="row">
-		<div class="col-12">
-			<div class="card shadow mb-4">
-				<div class="card-header py-3" onclick="toggleArea('search');">
-					<h6 class="m-0 font-weight-bold text-primary">
-						<span class="icon text-gray-600">
-                            <i class="search fas fa-arrow-up"></i>
-                        </span>&nbsp;
-						검색
-					</h6>
-				</div>
-				<div class="card-body" id="search">
-					<div class="row mb-4">
-						<div class="col-2">
-							<label><span class="asterisk">*</span>검색 키워드</label>
-							<textarea class="form-control" id="keywordList" name="keywordList" rows="20">강남산부인과
-부천산부인과</textarea>
-						</div>
-						<div class="col-2">
-							<label><span class="asterisk">*</span>블로그 주소1</label>
-							<textarea class="form-control" id="blogList1" name="blogList1" rows="20">https://blog.naver.com/mdysd7/223121608055
-https://m.blog.naver.com/cabbianopiu/223197462533</textarea>
-						</div>
-						<div class="col-2">
-							<label><span class="asterisk">*</span>블로그 주소2</label>
-							<textarea class="form-control" id="blogList2" name="blogList2" rows="20">https://blog.naver.com/noneangry/223161284556</textarea>
-						</div>
-						<div class="col-2">
-							<label><span class="asterisk">*</span>블로그 주소3</label>
-							<textarea class="form-control" id="blogList3" name="blogList3" rows="20"></textarea>
-						</div>
-						<div class="col-2">
-							<label><span class="asterisk">*</span>블로그 주소4</label>
-							<textarea class="form-control" id="blogList4" name="blogList4" rows="20"></textarea>
-						</div>
-						<div class="col-2">
-							<label><span class="asterisk">*</span>블로그 주소5</label>
-							<textarea class="form-control" id="blogList5" name="blogList5" rows="20"></textarea>
-						</div>
+		<!-- Page Heading -->
+		<div class="d-sm-flex align-items-center justify-content-between mb-4">
+			<h1 class="h3 mb-0 text-gray-800">통합조회</h1>
+		</div>
+	
+		<!-- 검색 영역 -->
+		<div class="row">
+			<div class="col-12">
+				<div class="card shadow mb-4">
+					<div class="card-header py-3" onclick="toggleArea('search');">
+						<h6 class="m-0 font-weight-bold text-primary">
+							<span class="icon text-gray-600">
+	                            <i class="search fas fa-arrow-up"></i>
+	                        </span>&nbsp;
+							검색
+						</h6>
 					</div>
-					<div style="text-align: center;">
-						<a href="#" class="btn btn-primary btn-icon-split" onclick="searchRank(); return false;">
-		                    <span class="text">통합조회</span>
-		                </a>
+					<div class="card-body" id="search">
+						<div class="row mb-4">
+							<div class="col-2">
+								<label><span class="asterisk">*</span>검색 키워드</label>
+								<a href="#" class="btn-sm btn-secondary btn-icon-split" onclick="getBlogList('keyword', 'keywordList'); return false;" style="float: right;">
+				                    <span class="text">불러오기</span>
+				                </a>
+								<textarea class="form-control" id="keywordList" name="keywordList" rows="20"></textarea>
+							</div>
+							<div class="col-2">
+								<label><span class="asterisk">*</span>로앤 최적화</label>
+								<a href="#" class="btn-sm btn-secondary btn-icon-split" onclick="getBlogList('roen', 'blogList1'); return false;" style="float: right;">
+				                    <span class="text">불러오기</span>
+				                </a>
+								<textarea class="form-control" id="blogList1" name="blogList1" rows="20"></textarea>
+							</div>
+							<div class="col-2">
+								<label><span class="asterisk">*</span>로앤 준최적화</label>
+								<a href="#" class="btn-sm btn-secondary btn-icon-split" onclick="getBlogList('roen2', 'blogList2'); return false;" style="float: right;">
+				                    <span class="text">불러오기</span>
+				                </a>
+								<textarea class="form-control" id="blogList2" name="blogList2" rows="20"></textarea>
+							</div>
+							<div class="col-2">
+								<label><span class="asterisk">*</span>애플</label>
+								<a href="#" class="btn-sm btn-secondary btn-icon-split" onclick="getBlogList('apple', 'blogList3'); return false;" style="float: right;">
+				                    <span class="text">불러오기</span>
+				                </a>
+								<textarea class="form-control" id="blogList3" name="blogList3" rows="20"></textarea>
+							</div>
+							<div class="col-2">
+								<label><span class="asterisk">*</span>기타</label>
+								<textarea class="form-control" id="blogList4" name="blogList4" rows="20"></textarea>
+							</div>
+							<div class="col-2">
+								<label><span class="asterisk">*</span>그 외</label>
+								<textarea class="form-control" id="blogList5" name="blogList5" rows="20"></textarea>
+							</div>
+						</div>
+						<div style="text-align: center;">
+							<a href="#" class="btn btn-primary btn-icon-split" onclick="searchRank(); return false;">
+			                    <span class="text">통합조회</span>
+			                </a>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
 	</div>
+	</form>
 
 	<!-- 컨텐츠 영역 -->
 	<div class="row">
@@ -240,13 +278,18 @@ https://m.blog.naver.com/cabbianopiu/223197462533</textarea>
 					</div>
 				</div>
 				<div class="card-body hide" id="result">
+					<div class="mb-3" style="text-align: right; display: none;">
+					  <a href="#" class="btn btn-primary btn-icon-split" onclick="downloadExcel();">
+			            <span class="text">엑셀다운로드</span>
+			          </a>
+					</div>
 					<nav class="mb-4">
 					  <div class="nav nav-tabs" id="nav-tab" role="tablist">
-					    <button class="nav-link active mr-1" id="nav-blog1-tab" data-toggle="tab" data-target="#nav-blog1" type="button">blog1</button>
-					    <button class="nav-link mr-1" id="nav-blog2-tab" data-toggle="tab" data-target="#nav-blog2" type="button">blog2</button>
-					    <button class="nav-link mr-1" id="nav-blog3-tab" data-toggle="tab" data-target="#nav-blog3" type="button">blog3</button>
-					    <button class="nav-link mr-1" id="nav-blog4-tab" data-toggle="tab" data-target="#nav-blog4" type="button">blog4</button>
-					    <button class="nav-link mr-1" id="nav-blog5-tab" data-toggle="tab" data-target="#nav-blog5" type="button">blog5</button>
+					    <button class="nav-link active mr-1" id="nav-blog1-tab" data-toggle="tab" data-target="#nav-blog1" type="button">로앤 최적화</button>
+					    <button class="nav-link mr-1" id="nav-blog2-tab" data-toggle="tab" data-target="#nav-blog2" type="button">로앤 준최적화</button>
+					    <button class="nav-link mr-1" id="nav-blog3-tab" data-toggle="tab" data-target="#nav-blog3" type="button">애플</button>
+					    <button class="nav-link mr-1" id="nav-blog4-tab" data-toggle="tab" data-target="#nav-blog4" type="button">기타</button>
+					    <button class="nav-link mr-1" id="nav-blog5-tab" data-toggle="tab" data-target="#nav-blog5" type="button">그 외</button>
 					  </div>
 					</nav>
 					<div class="tab-content" id="myTabContent">

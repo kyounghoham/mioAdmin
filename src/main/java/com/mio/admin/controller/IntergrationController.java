@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -36,5 +37,8 @@ public class IntergrationController {
 		intergrationService.startCrawling(param, request, response);
 	}
 
-
+	@RequestMapping(value= "/xlsDownload", method = { RequestMethod.GET, RequestMethod.POST})
+	public void xlsDownload(@RequestParam Map<String, Object> param, HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+		intergrationService.xlsDownload(param, request, response, model);
+	}
 }
