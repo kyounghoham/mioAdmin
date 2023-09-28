@@ -68,6 +68,7 @@ function startProgress() {
 	var blogList5 = $("#blogList5").val().trim();
 	
 	xhr.previous_text = "";
+	bodyList = [];
 	
 	for (let i = 1; i <= 5; i++) {
 		if(dataTableArr[`dataTable${i}`]) {
@@ -98,11 +99,97 @@ function startProgress() {
 					
 					var jsonString = result;
 					var jsonObject = JSON.parse(jsonString);
-					var number = jsonObject.number;
+					var percent = Number(jsonObject.percent);
+					
+					for(item of jsonObject.resultList) {
+						bodyList.push(item);
+						var html = "";
+						if(item.adFlag == 'Y') {
+							html += "<tr>";	
+						} else {
+							html += "<tr>";
+						}
+						html += "	<td>" + item.number + "</td>";
+						html += "	<td>" + item.keyword + "</td>";
+						html += "	<td>" + item.name + "</td>";
+						html += "	<td><a href='" + item.href + "' target='_blank'>" + item.href + "</td>";
+						if(item.adFlag == 'Y') {
+							html += "	<td><a href='" + item.href + "' target='_blank'><span style='border:1px solid #2eb976; padding: 0px 10px; border-radius: 15px; color: #2eb976;'>AD</span><br/>" + item.title + "</td>";
+						} else {
+							html += "	<td><a href='" + item.href + "' target='_blank'>" + item.title + "</td>";
+						}
+						html += "	<td>" + item.rank + "</td>";
+						html += "	<td>" + item.rank + "</td>";
+						html += "</tr>";
+						
+						// 데이터 추가
+						$(`#tableBody${item.blogNumber}`).append(html);
+						
+					}
+					
+					$("#progress-bar").text(percent + "%");
+                    $("#progress-bar").css("width", percent + "%");
+                    
+	                xhr.previous_text = e.currentTarget.responseText;
+
+					if(percent == 100) {
+						for (let i = 1; i <= 5; i++) {
+							dataTableArr[`dataTable${i}`] = $(`#dataTable${i}`).DataTable();
+						}
+						
+						$("#progressClose").removeClass('hide');
+						xhr.previous_text = '';
+					}
+                }
+            }
+        },
+    });
+}
+
+function startProgress2() {
+    var keywordList = $("#keywordList").val().trim();
+	var blogList1 = $("#blogList1").val().trim();
+	var blogList2 = $("#blogList2").val().trim();
+	var blogList3 = $("#blogList3").val().trim();
+	var blogList4 = $("#blogList4").val().trim();
+	var blogList5 = $("#blogList5").val().trim();
+	
+	xhr.previous_text = "";
+	
+	for (let i = 1; i <= 5; i++) {
+		if(dataTableArr[`dataTable${i}`]) {
+			dataTableArr[`dataTable${i}`].destroy();
+			$(`#tableBody${i}`).html('');	
+		}
+	}
+
+	$.ajax({
+        type: 'POST',
+        url: '/intergration/startCrawling',
+        contentType: 'application/json;charset=UTF-8', // 서버에서 스트리밍되는 데이터의 형식
+        data : JSON.stringify({
+			"keywordList" : keywordList,
+			"blogList1": blogList1,
+			"blogList2": blogList2,
+			"blogList3": blogList3,
+			"blogList4": blogList4,
+			"blogList5": blogList5
+		}),
+		dataType : "json",
+		async: true,
+        xhrFields: {
+            onprogress: function (e) {
+                var result = e.currentTarget.responseText.substring(xhr.previous_text.length);
+                if (result !== "") {
+					
+					var jsonString = result;
+					var jsonObject = JSON.parse(jsonString);
+					var blogNumber = jsonObject.blogNumber;
 					var percent = Number(jsonObject.percent);
 					
 					var html = "";
 					for(item of jsonObject.resultList) {
+						item.blogNumber = blogNumber;
 						bodyList.push(item);
 						if(item.adFlag == 'Y') {
 							html += "<tr>";	
@@ -121,10 +208,12 @@ function startProgress() {
 						html += "	<td>" + item.rank + "</td>";
 						html += "	<td>" + item.rank + "</td>";
 						html += "</tr>";
+						
+						
 					}
 					
 					// 데이터 추가
-					$(`#tableBody${number}`).append(html);
+					$(`#tableBody${blogNumber}`).append(html);
 					
 					$("#progress-bar").text(percent + "%");
                     $("#progress-bar").css("width", percent + "%");
@@ -132,7 +221,7 @@ function startProgress() {
 	                xhr.previous_text = e.currentTarget.responseText;
 
 					if(percent == 100) {
-						for (let i = 1; i <= number; i++) {
+						for (let i = 1; i <= blogNumber; i++) {
 							dataTableArr[`dataTable${i}`] = $(`#dataTable${i}`).DataTable();
 						}
 						
@@ -156,7 +245,7 @@ function getBlogList(blog, textArea) {
 	} else if(blog == 'roen2') {
 		list = 'https://blog.naver.com/lttyrugv\nhttps://blog.naver.com/vxztd8s9\nhttps://blog.naver.com/lognav\nhttps://blog.naver.com/dtta8i1\nhttps://blog.naver.com/kangsn7312\nhttps://blog.naver.com/wldus9211247\nhttps://blog.naver.com/chltmdska\nhttps://blog.naver.com/msbrva96\nhttps://blog.naver.com/rytnall\nhttps://blog.naver.com/dlatnwjdd\nhttps://blog.naver.com/tlsrjwlss\nhttps://blog.naver.com/dkflstjdd\nhttps://blog.naver.com/dndlfkss';
 	} else if(blog == 'apple') {
-		list = 'https://m.blog.naver.com/jnhk2423\nhttps://m.blog.naver.com/s2010ca\nhttps://m.blog.naver.com/clubd82\nhttps://m.blog.naver.com/noneangry\nhttps://m.blog.naver.com/aerdbeqdkzzrp\nhttps://m.blog.naver.com/vlpjmp83bf\nhttps://m.blog.naver.com/fxnsepqxrc\nhttps://m.blog.naver.com/mpweqmrpiwnr\nhttps://m.blog.naver.com/ln53apvclh\nhttps://m.blog.naver.com/96bkrogrkx\nhttps://m.blog.naver.com/gavin82895\nhttps://m.blog.naver.com/ahenrk7280\nhttps://m.blog.naver.com/xapxtksv57\nhttps://m.blog.naver.com/gkawnsdn0818\nhttps://m.blog.naver.com/fxnsepqxrc\nhttps://m.blog.naver.com/tjddlwjs29982\nhttps://m.blog.naver.com/virtual9894\nhttps://m.blog.naver.com/rate2720\nhttps://m.blog.naver.com/rjwuqjfufk\n';
+		list = 'https://m.blog.naver.com/jnhk2423\nhttps://m.blog.naver.com/s2010ca\nhttps://m.blog.naver.com/clubd82\nhttps://m.blog.naver.com/noneangry\nhttps://m.blog.naver.com/aerdbeqdkzzrp\nhttps://m.blog.naver.com/vlpjmp83bf\nhttps://m.blog.naver.com/fxnsepqxrc\nhttps://m.blog.naver.com/mpweqmrpiwnr\nhttps://m.blog.naver.com/ln53apvclh\nhttps://m.blog.naver.com/96bkrogrkx\nhttps://m.blog.naver.com/gavin82895\nhttps://m.blog.naver.com/ahenrk7280\nhttps://m.blog.naver.com/xapxtksv57\nhttps://m.blog.naver.com/gkawnsdn0818\nhttps://m.blog.naver.com/tjddlwjs29982\nhttps://m.blog.naver.com/virtual9894\nhttps://m.blog.naver.com/rate2720\nhttps://m.blog.naver.com/rjwuqjfufk\n';
 	} else {
 		list = '대구 임신중절수술\n강남산부인과\n부천산부인과\n안산산부인과\n임신중절수술 방법\n낙태 법\n강남산부인과\n수원산부인과\n중절수술후 생리\n낙태수술 합법\n인천산부인과\n낙태 알약\n안산 임신중절수술\n여의도산부인과\n성병완치\n부산 낙태수술\n낙태보호자\n일산 낙태수술\n여성성병종류\n가드넬라균원인\n수원 낙태수술\n부산산부인과\n성병사마귀\n유레아플라즈마치료\n부천 낙태수술\n서초구 임신중절수술 낙태수술\n역삼 임신중절수술 낙태수술\n미레나생리통\n칸디다질염냉\n양재 임신중절수술 낙태수술\n양재역 임신중절수술 낙태수술\n교대역 낙태수술\n반포역 낙태수술\n수원산부인과\n구월동산부인과\n부정출혈생리\n부산 낙태수술\n잠원동 임신중절수술 낙태수술\n잠원역 임신중절수술 낙태수술\n대구산부인과\n중절수술 기록\n방배 임신중절수술 낙태수술\n방배역 임신중절수술 낙태수술\n부천산부인과\n콘딜로마완치\n부천 임신중절수술\n의정부산부인과\n착상혈나오는시기\n일산 임신중절수술\n잠실 임신중절수술\n안산 낙태수술\n의정부 임신중절수술\n유레아플라즈마치료\n냉많이나오는이유\n서면산부인과\n일산 낙태수술\n잠실역산부인과\n사후피임약처방\n천호산부인과\n인천산부인과\n낙태 후유증\n낙태 기록\n잠실산부인과\n관계후피임약'
 	}
@@ -278,7 +367,7 @@ function downloadExcel() {
 					</div>
 				</div>
 				<div class="card-body hide" id="result">
-					<div class="mb-3" style="text-align: right; display: none;">
+					<div class="mb-3" style="text-align: right;">
 					  <a href="#" class="btn btn-primary btn-icon-split" onclick="downloadExcel();">
 			            <span class="text">엑셀다운로드</span>
 			          </a>

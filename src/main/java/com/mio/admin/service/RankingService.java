@@ -195,7 +195,7 @@ public class RankingService {
 	            dataList.add(map);
 	        }
 
-//			// 엑셀 다운로드
+			// 엑셀 다운로드
 			buildExcelDocument(fileName, columnList, dataList, response);
 
 		} catch(Exception e) {
@@ -211,7 +211,6 @@ public class RankingService {
 		CreationHelper createHelper = workbook.getCreationHelper();
 		HSSFSheet sheet = workbook.createSheet(fileName);
 		HSSFCellStyle bodyStyle = workbook.createCellStyle();
-		HSSFCellStyle columnStyle = workbook.createCellStyle();
 		HSSFRow row;
 		HSSFCell cell;
 		
@@ -222,9 +221,6 @@ public class RankingService {
 
 		// 셀스타일 
 		setCellStyle(bodyStyle, fm, color);
-		
-		// 에듀윌이 포함된 컬럼 노란색 표시
-		columnStyle.setFillForegroundColor(IndexedColors.YELLOW.index);
 		
 		rowNum ++;
 		row = sheet.createRow(rowNum);
