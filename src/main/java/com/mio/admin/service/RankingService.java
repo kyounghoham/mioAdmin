@@ -73,7 +73,7 @@ public class RankingService {
 				resultMap = pcCrawling(keyword, blog);
 				
 				// 1초 딜레이
-				Thread.sleep(1000);
+				Thread.sleep(3000);
 				
 				// 서버로 진행상황 전달
 		        float percent = (i+1) * 100 / totalCnt;
@@ -128,7 +128,7 @@ public class RankingService {
 					adFlag = "Y";
 					name = item.querySelector(".source_txt.name").asText();
 					
-					Thread.sleep(500);
+					Thread.sleep(1000);
 					page = htmlUnit.getHtmlPageNonCss(webClient, href);
 					href = page.getBaseURL().toString();
 				} else {

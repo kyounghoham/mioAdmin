@@ -26,7 +26,7 @@ public class JwtTokenUtil implements Serializable {
     @Value("spring.jwt.secret")
     private String secretKey;
 
-    private long accessTokenValidMilisecond = 1000L * 60 * 60 * 2; // 2시간만 토큰 유효
+    private long accessTokenValidMilisecond = 1000L * 60 * 60 * 48; // 2일간 토큰 유효
     private long refreshTokenValidMilisecond = 1000L * 60 * 60 * 24 * 15; // 15일만 토큰 유효
 
     private HashMap<String, Boolean> refreshTokenList = new HashMap<>();

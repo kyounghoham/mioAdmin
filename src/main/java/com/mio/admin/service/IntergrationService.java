@@ -1,6 +1,7 @@
 package com.mio.admin.service;
 
 import java.io.PrintWriter;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -63,43 +64,6 @@ public class IntergrationService {
         PrintWriter out = response.getWriter();
         
 		try {
-			// 블로그 리스트 loop
-//			for(int j=0; j<blogList.size(); j++) {
-//				// 블로그 마다 10초 쉬는 텀 제공
-//				Thread.sleep(1000);
-//				// 블로그 별 게시글번호
-//				number = 0;
-//				
-//				// 키워드 리스트 loop
-//				for(int i=0; i<totalCnt; i++) {
-//					Map<String, Object> resultMap = new HashMap<>();
-//					List<Map<String, Object>> resultList = new ArrayList<>();
-//					String keyword = keywordList[i];
-//					String[] blogArr = blogList.get(j);
-//					
-//					if(blogArr.length > 0) {
-//						BrowserVersion browser = (i % 2 == 0) ? BrowserVersion.FIREFOX_60 : BrowserVersion.CHROME;
-//						// 크롤링
-//						pcCrawling(keyword, blogArr, resultList, browser);
-//					}
-//					
-//					// 1초 딜레이
-//					Thread.sleep(1000);
-//					
-//					// 서버로 진행상황 전달
-//					int a = (i+1) + (j*totalCnt);
-//					float percent = (a) * 100 / (totalCnt * blogList.size());
-//			        resultMap.put("percent", (int) percent);
-//			        resultMap.put("resultList", resultList);
-//			        resultMap.put("blogNumber", j+1);	// 블로그 번호
-//			        Gson gson = new Gson();
-//			        String json = gson.toJson(resultMap);
-//			        
-//			        out.println(json);
-//			        out.flush();
-//				}
-//			}
-
 			// 키워드 리스트 loop
 			Map<String, Integer> blogMap = new HashMap<>();
 			for(int j=0; j<blogList.size(); j++) {
@@ -108,16 +72,22 @@ public class IntergrationService {
 			}
 			
 			for(int i=0; i<totalCnt; i++) {
+				// 50건 마다 60초 휴식
+				if(i > 0 && i % 100 == 0) {
+					Thread.sleep(60000);					
+				}
 				Map<String, Object> resultMap = new HashMap<>();
 				List<Map<String, Object>> resultList = new ArrayList<>();
 				String keyword = keywordList[i];
+				
+				System.out.println("No : " + (i+1) + " / 키워드 :" + keyword);
 				
 				BrowserVersion browser = (i % 2 == 0) ? BrowserVersion.FIREFOX_60 : BrowserVersion.CHROME;
 				// 크롤링
 				pcCrawling(keyword, blogList, resultList, blogMap, browser);
 				
-				// 1초 딜레이
-				Thread.sleep(1000);
+				// 5초 딜레이
+				Thread.sleep(5000);
 				
 				// 서버로 진행상황 전달
 				float percent = (i+1) * 100 / (totalCnt);
@@ -171,8 +141,9 @@ public class IntergrationService {
 
 			// 게시물 리스트
 			DomNodeList<DomNode> li_list = page.querySelectorAll("ul.lst_total li._svp_item");
-//			for (int i = 0; i < li_list.size(); i++) {
-			for (int i = 0; i < 10; i++) {
+			int size = li_list.size() > 10 ? 10 : li_list.size();
+			
+			for (int i = 0; i < size; i++) {
 				DomNode item = li_list.get(i);
 				HtmlAnchor anchor = item.querySelector(".total_tit");
 				DomNode adNode = item.querySelector(".spview.ico_ad");
@@ -186,7 +157,7 @@ public class IntergrationService {
 					adFlag = "Y";
 					name = item.querySelector(".source_txt.name").asText();
 					
-					Thread.sleep(500);
+					Thread.sleep(3000);
 					page = htmlUnit.getHtmlPageNonCss(webClient, href);
 					href = page.getBaseURL().toString();
 				} else {
@@ -199,26 +170,63 @@ public class IntergrationService {
 					
 					for (String blog : blogArr) {
 						if(!blog.equals("")) {
-							String blog_path = CommonUtils.getPath(blog).split("/")[1];
-							String href_path = CommonUtils.getPath(href).split("/")[1];
-							if (href_path.contains(blog_path)) {
-								// 블로그 별로 number는 0부터 시작
-								int number = blogMap.get("blogNumber"+blogNumber);
-								number++;
-								blogMap.put("blogNumber"+blogNumber, number);
+							boolean isValidUrl = isValidUrl(blog);
+							
+							if(!isValidUrl) {
+								// 1. 의료광고번호
+								String blog_medical_num = blog.replaceAll(" ", "");
+								DomNode medical_num = item.querySelector(".medical_num");
 								
-								Map<String, Object> map = new HashMap<>();
-								map.put("blogNumber", blogNumber);
-								map.put("number", number);
-								map.put("keyword", keyword);
-								map.put("rank", i + 1);
-								map.put("name", name);
-								map.put("title", title);
-								map.put("href", href.replace("m.blog", "blog").replace("blog", "m.blog"));
-								map.put("blog", blog.replace("m.blog", "blog").replace("blog", "m.blog"));
-								map.put("adFlag", adFlag);
-								resultList.add(map);
+								if(medical_num != null) {
+									String medicalNum = medical_num.asText().replaceAll(" ", "");;
+									if(medicalNum.contains(blog_medical_num)) {
+										// 블로그 별로 number는 0부터 시작
+										int number = blogMap.get("blogNumber"+blogNumber);
+										number++;
+										blogMap.put("blogNumber"+blogNumber, number);
+										
+										Map<String, Object> map = new HashMap<>();
+										map.put("blogNumber", blogNumber);
+										map.put("number", number);
+										map.put("keyword", keyword);
+										map.put("rank", i + 1);
+										map.put("name", name);
+										map.put("title", title);
+										map.put("href", href.replace("m.blog", "blog").replace("blog", "m.blog"));
+										map.put("blog", blog.replace("m.blog", "blog").replace("blog", "m.blog"));
+										map.put("adFlag", adFlag);
+										resultList.add(map);
+										
+										// insertMap
+									}
+								}
+								
+							} else {
+								// 2. blog주소 
+								String blog_path = CommonUtils.getPath(blog).split("/")[1];
+								String href_path = CommonUtils.getPath(href).split("/")[1];
+								if (href_path.contains(blog_path)) {
+									// 블로그 별로 number는 0부터 시작
+									int number = blogMap.get("blogNumber"+blogNumber);
+									number++;
+									blogMap.put("blogNumber"+blogNumber, number);
+									
+									Map<String, Object> map = new HashMap<>();
+									map.put("blogNumber", blogNumber);
+									map.put("number", number);
+									map.put("keyword", keyword);
+									map.put("rank", i + 1);
+									map.put("name", name);
+									map.put("title", title);
+									map.put("href", href.replace("m.blog", "blog").replace("blog", "m.blog"));
+									map.put("blog", blog.replace("m.blog", "blog").replace("blog", "m.blog"));
+									map.put("adFlag", adFlag);
+									resultList.add(map);
+									
+									// insertMap
+								}
 							}
+								
 						}
 					}
 				}
@@ -229,67 +237,16 @@ public class IntergrationService {
 		} finally {
 			webClient.close();
 		}
-	}	
+	}
 	
-//	public void pcCrawling2(String keyword, String[] blogList, List<Map<String, Object>> resultList, BrowserVersion browser) {
-//		HtmlUnit htmlUnit = new HtmlUnit();
-//		WebClient webClient = new WebClient(browser);
-//
-//		try {
-//			String url = "https://m.search.naver.com/search.naver?where=m_view&sm=mtb_jum&query=" + URLEncoder.encode(keyword, "UTF-8");
-//			HtmlPage page = htmlUnit.getHtmlPageNonCss(webClient, url);
-//
-//			// 게시물 리스트
-//			DomNodeList<DomNode> li_list = page.querySelectorAll("ul.lst_total li._svp_item");
-////			for (int i = 0; i < li_list.size(); i++) {
-//			for (int i = 0; i < 10; i++) {
-//				// 30개 * 블로그 리스트 검사
-//				DomNode item = li_list.get(i);
-//				HtmlAnchor anchor = item.querySelector(".total_tit");
-//				DomNode adNode = item.querySelector(".spview.ico_ad");
-//				String title = anchor.asText();
-//				String href = anchor.getAttribute("href");
-//				String adFlag = "N";
-//				String name = "";
-//				
-//				// 광고여부 체크
-//				if(adNode != null) {
-//					adFlag = "Y";
-//					name = item.querySelector(".source_txt.name").asText();
-//					
-//					Thread.sleep(500);
-//					page = htmlUnit.getHtmlPageNonCss(webClient, href);
-//					href = page.getBaseURL().toString();
-//				} else {
-//					name = item.querySelector(".sub_name").asText();
-//				}
-//
-//				for (String blog : blogList) {
-//					String blog_path = CommonUtils.getPath(blog).split("/")[1];
-//					String href_path = CommonUtils.getPath(href).split("/")[1];
-//					if (href_path.contains(blog_path)) {
-//						Map<String, Object> map = new HashMap<>();
-//						number++;
-//						map.put("number", number);
-//						map.put("type", "pc");
-//						map.put("keyword", keyword);
-//						map.put("rank", i + 1);
-//						map.put("name", name);
-//						map.put("title", title);
-//						map.put("href", href.replace("m.blog", "blog").replace("blog", "m.blog"));
-//						map.put("blog", blog.replace("m.blog", "blog").replace("blog", "m.blog"));
-//						map.put("adFlag", adFlag);
-//						resultList.add(map);
-//					}
-//				}
-//			}
-//
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		} finally {
-//			webClient.close();
-//		}
-//	}
+	private boolean isValidUrl(String url) {
+		try {
+			new URL(url);
+			return true;
+		} catch(Exception e) {
+			return false;
+		}
+	}
 
 	public void xlsDownload(Map<String, Object> param, HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
 		List<Map<String, Object>> dataList = new ArrayList<>();
@@ -310,7 +267,8 @@ public class IntergrationService {
 			JsonArray jsonArray = jsonElement.getAsJsonArray();
 			
 			// 전체 검색결과 리스트
-			for(String keyword : keywordList) {
+			for(int ii=0; ii<keywordList.length; ii++) {
+				String keyword = keywordList[ii];
 				keyword = keyword.trim();
 				Map<String, Object> map = new HashMap<>();
 				map.put("keyword", keyword);

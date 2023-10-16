@@ -94,7 +94,7 @@ function startProgress() {
         xhrFields: {
             onprogress: function (e) {
                 var result = e.currentTarget.responseText.substring(xhr.previous_text.length);
-                console.log(result)
+                // console.log(result)
                 if (result !== "") {
 					
 					var jsonString = result;

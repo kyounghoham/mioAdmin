@@ -58,7 +58,9 @@ public class HtmlUnit {
 		return page;
 	}
 
-	public HtmlPage getHtmlPageNonCss(WebClient webClient, String url) {
+	public HtmlPage getHtmlPageNonCss(WebClient webClient, String url) throws Exception {
+		Thread.sleep(2000);
+		
 		HtmlPage page = null;
 
 		try {
