@@ -28,6 +28,7 @@ import org.springframework.ui.ModelMap;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.DomElement;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.DomNodeList;
 import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
@@ -101,7 +102,15 @@ public class RankingService {
 			HtmlPage page = htmlUnit.getHtmlPageNonCss(webClient, url);
 
 			// 게시물 리스트
-			DomNodeList<DomNode> li_list = page.querySelectorAll("ul.lst_total li._svp_item");
+			DomNodeList<DomNode> li_list = page.querySelectorAll("ul.lst_view li.bx");
+			List<DomNode> filteredLiList = new ArrayList<DomNode>();
+
+			for (DomNode li : li_list) {
+				DomElement de = (DomElement) li;
+			    if (!de.getAttribute("class").toString().contains("type_join")) {
+			        filteredLiList.add(li);
+			    }
+			}
 			
 			resultMap.put("number", number);
 			resultMap.put("keyword", keyword);
@@ -112,10 +121,12 @@ public class RankingService {
 			resultMap.put("name", "-");
 			resultMap.put("title", "-");
 			
-			for (int i = 0; i < li_list.size(); i++) {
+			int size = filteredLiList.size() > 10 ? 10 : filteredLiList.size();
+			
+			for (int i = 0; i < size; i++) {
 				// 30개 * 블로그 리스트 검사
-				DomNode item = li_list.get(i);
-				HtmlAnchor anchor = item.querySelector(".total_tit");
+				DomNode item = filteredLiList.get(i);
+				HtmlAnchor anchor = item.querySelector(".title_area a");
 				DomNode adNode = item.querySelector(".spview.ico_ad");
 				String title = anchor.asText();
 				String href = anchor.getAttribute("href");
@@ -126,13 +137,13 @@ public class RankingService {
 				// 광고여부 체크
 				if(adNode != null) {
 					adFlag = "Y";
-					name = item.querySelector(".source_txt.name").asText();
+					name = item.querySelector(".user_info a").asText();
 					
 					Thread.sleep(1000);
 					page = htmlUnit.getHtmlPageNonCss(webClient, href);
 					href = page.getBaseURL().toString();
 				} else {
-					name = item.querySelector(".sub_name").asText();
+					name = item.querySelector(".user_info a").asText();
 				}
 
 				String href_path = CommonUtils.getPath(href);

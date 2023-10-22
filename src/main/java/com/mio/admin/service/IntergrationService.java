@@ -25,11 +25,13 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.ModelMap;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.DomElement;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.DomNodeList;
 import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
@@ -49,6 +51,8 @@ import lombok.RequiredArgsConstructor;
 public class IntergrationService {
 
 	// private int number = 0;
+	@Autowired
+	private SearchAdService searchAdService;
 	
 	public void startCrawling(Map<String, Object> param, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		List<String[]> blogList = new ArrayList<>();
@@ -140,12 +144,21 @@ public class IntergrationService {
 			HtmlPage page = htmlUnit.getHtmlPageNonCss(webClient, url);
 
 			// 게시물 리스트
-			DomNodeList<DomNode> li_list = page.querySelectorAll("ul.lst_total li._svp_item");
-			int size = li_list.size() > 10 ? 10 : li_list.size();
+			DomNodeList<DomNode> li_list = page.querySelectorAll("ul.lst_view li.bx");
+			List<DomNode> filteredLiList = new ArrayList<DomNode>();
+
+			for (DomNode li : li_list) {
+				DomElement de = (DomElement) li;
+			    if (!de.getAttribute("class").toString().contains("type_join")) {
+			        filteredLiList.add(li);
+			    }
+			}
+			
+			int size = filteredLiList.size() > 10 ? 10 : filteredLiList.size();
 			
 			for (int i = 0; i < size; i++) {
-				DomNode item = li_list.get(i);
-				HtmlAnchor anchor = item.querySelector(".total_tit");
+				DomNode item = filteredLiList.get(i);
+				HtmlAnchor anchor = item.querySelector(".title_area a");
 				DomNode adNode = item.querySelector(".spview.ico_ad");
 				String title = anchor.asText();
 				String href = anchor.getAttribute("href");
@@ -155,13 +168,13 @@ public class IntergrationService {
 				// 광고여부 체크
 				if(adNode != null) {
 					adFlag = "Y";
-					name = item.querySelector(".source_txt.name").asText();
+					name = item.querySelector(".user_info a").asText();
 					
 					Thread.sleep(3000);
 					page = htmlUnit.getHtmlPageNonCss(webClient, href);
 					href = page.getBaseURL().toString();
 				} else {
-					name = item.querySelector(".sub_name").asText();
+					name = item.querySelector(".user_info a").asText();
 				}
 				
 				for(int j=0; j<blogList.size(); j++) {
@@ -175,7 +188,7 @@ public class IntergrationService {
 							if(!isValidUrl) {
 								// 1. 의료광고번호
 								String blog_medical_num = blog.replaceAll(" ", "");
-								DomNode medical_num = item.querySelector(".medical_num");
+								DomNode medical_num = item.querySelector(".user_info .sub:nth-child(3)");
 								
 								if(medical_num != null) {
 									String medicalNum = medical_num.asText().replaceAll(" ", "");;
@@ -195,6 +208,12 @@ public class IntergrationService {
 										map.put("href", href.replace("m.blog", "blog").replace("blog", "m.blog"));
 										map.put("blog", blog.replace("m.blog", "blog").replace("blog", "m.blog"));
 										map.put("adFlag", adFlag);
+										
+										Thread.sleep(200);
+										Map<String, String> searchMap = searchAdService.requestKeyword(keyword);
+										map.put("pcCnt", searchMap.get("pcCnt"));
+										map.put("moCnt", searchMap.get("moCnt"));
+										
 										resultList.add(map);
 										
 										// insertMap
@@ -221,6 +240,12 @@ public class IntergrationService {
 									map.put("href", href.replace("m.blog", "blog").replace("blog", "m.blog"));
 									map.put("blog", blog.replace("m.blog", "blog").replace("blog", "m.blog"));
 									map.put("adFlag", adFlag);
+									
+									Thread.sleep(200);
+									Map<String, String> searchMap = searchAdService.requestKeyword(keyword);
+									map.put("pcCnt", searchMap.get("pcCnt"));
+									map.put("moCnt", searchMap.get("moCnt"));
+									
 									resultList.add(map);
 									
 									// insertMap
@@ -251,7 +276,7 @@ public class IntergrationService {
 	public void xlsDownload(Map<String, Object> param, HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
 		List<Map<String, Object>> dataList = new ArrayList<>();
 		String fileName = "";
-		String[] columnList = {"keyword|키워드", "rank1|1위", "rank2|2위", "rank3|3위", "rank4|4위", "rank5|5위", "rank6|6위", "rank7|7위", "rank8|8위", "rank9|9위", "rank10|10위"}; 
+		String[] columnList = {"keyword|키워드", "pcCnt|PC검색수", "moCnt|MO검색수", "rank1|1위", "rank2|2위", "rank3|3위", "rank4|4위", "rank5|5위", "rank6|6위", "rank7|7위", "rank8|8위", "rank9|9위", "rank10|10위"}; 
 		String[] keywordList = CommonUtils.getParameter(param, "keywordList", "").split("\n");
 		String[] blogList = {"로앤 최적화", "로앤 준최적화", "애플", "기타", "외"};
 		String bodyList = CommonUtils.getParameter(param, "bodyList", "");
@@ -278,13 +303,27 @@ public class IntergrationService {
 						String rank = item.get("rank").getAsString();
 						String number = item.get("blogNumber").getAsString();
 						String adFlag = item.get("adFlag").getAsString();
+						String pcCnt = item.get("pcCnt").getAsString();
+						String moCnt = item.get("moCnt").getAsString();
 						String blogNm = blogList[Integer.parseInt(number) - 1];
+						
 						if(adFlag.equals("Y")) {
 							blogNm += "(AD)";
 						}
+						map.put("pcCnt", pcCnt);
+						map.put("moCnt", moCnt);
 						map.put("rank"+rank, blogNm);
 					}
 				}
+				
+				String pcCnt = CommonUtils.getParameter(map, "pcCnt", "");
+				if(pcCnt.equals("")) {
+					Thread.sleep(250);
+					Map<String, String> searchMap = searchAdService.requestKeyword(keyword);
+					map.put("pcCnt", searchMap.get("pcCnt"));
+					map.put("moCnt", searchMap.get("moCnt"));
+				}
+				
 				dataList.add(map);
 			}
 			
@@ -371,14 +410,16 @@ public class IntergrationService {
 						cell = setCellValueAndStyle(row, cellIdx, value, bodyStyle);
 					}
 					
-					sheet.autoSizeColumn(cellIdx);
-					sheet.setColumnWidth(cellIdx, (sheet.getColumnWidth(cellIdx)) + 2048);
+//					sheet.autoSizeColumn(cellIdx);
+//					sheet.setColumnWidth(cellIdx, (sheet.getColumnWidth(cellIdx)) + 2048);
 
 					cellIdx++;
 				}
 				rowNum++;
 			}
 		}
+		
+		sheet.setColumnWidth(0, (sheet.getColumnWidth(0)) + 1024*3);
 
 		workbook.write(response.getOutputStream());
 		workbook.close();
